@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Melb Twenty — Onboarding Mockup</title>
+<style>
+  :root{
+    --bg:#0d0d10;
+    --card:#17171c;
+    --card2:#1f1f26;
+    --accent:#ff3d68;
+    --accent2:#7c4dff;
+    --text:#f4f4f6;
+    --muted:#8a8a94;
+    --border:#2a2a32;
+    --online:#3ddc84;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    background:radial-gradient(circle at 50% 0%,#26141d 0%,var(--bg) 55%);
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:24px;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    height:820px;
+    background:var(--card);
+    border-radius:44px;
+    border:8px solid #000;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;
+    top:0;left:50%;
+    transform:translateX(-50%);
+    width:140px;height:26px;
+    background:#000;
+    border-radius:0 0 18px 18px;
+    z-index:20;
+  }
+  .topbar{
+    padding:44px 22px 10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .backbtn{
+    width:34px;height:34px;
+    border-radius:50%;
+    background:var(--card2);
+    border:1px solid var(--border);
+    color:var(--text);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:16px;
+    visibility:hidden;
+  }
+  .backbtn.show{visibility:visible;}
+  .progress{
+    flex:1;
+    display:flex;
+    gap:6px;
+  }
+  .progress .seg{
+    flex:1;
+    height:4px;
+    border-radius:2px;
+    background:var(--border);
+    overflow:hidden;
+  }
+  .progress .seg i{
+    display:block;
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width .35s ease;
+  }
+  .pagewrap{
+    flex:1;
+    overflow-y:auto;
+    padding:8px 24px 24px;
+  }
+  .page{display:none;animation:fade .3s ease;}
+  .page.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  h1{
+    font-size:24px;
+    margin:10px 0 4px;
+    letter-spacing:-.02em;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:14px;
+    margin:0 0 22px;
+    line-height:1.4;
+  }
+  .qgroup{margin-bottom:26px;}
+  .qlabel{
+    font-size:13px;
+    font-weight:600;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    margin-bottom:10px;
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .options.row{flex-direction:row;}
+  .opt{
+    flex:1;
+    padding:14px 16px;
+    border-radius:14px;
+    background:var(--card2);
+    border:1.5px solid var(--border);
+    cursor:pointer;
+    font-size:15px;
+    font-weight:500;
+    text-align:center;
+    transition:all .15s ease;
+    user-select:none;
+  }
+  .opt small{
+    display:block;
+    font-weight:400;
+    color:var(--muted);
+    font-size:11.5px;
+    margin-top:3px;
+  }
+  .opt.selected{
+    background:linear-gradient(135deg,rgba(255,61,104,.18),rgba(124,77,255,.18));
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent) inset;
+  }
+  .opt.selected small{color:#e8b4c0;}
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .chip{
+    padding:9px 14px;
+    border-radius:999px;
+    background:var(--card2);
+    border:1.5px solid var(--border);
+    font-size:13px;
+    cursor:pointer;
+    user-select:none;
+    transition:all .15s ease;
+  }
+  .chip.selected{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .kink-tags{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .3s ease, margin .3s ease;
+    margin-top:0;
+  }
+  .kink-tags.open{
+    max-height:300px;
+    margin-top:14px;
+  }
+  input[type=text], textarea{
+    width:100%;
+    background:var(--card2);
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    padding:12px 14px;
+    color:var(--text);
+    font-size:14px;
+    font-family:inherit;
+    resize:none;
+  }
+  textarea{min-height:80px;}
+  input::placeholder, textarea::placeholder{color:#5c5c66;}
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--card2);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:12px 14px;
+    margin-top:10px;
+  }
+  .toggle-row .lbl{font-size:13.5px;}
+  .toggle-row .lbl small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;font-weight:400;}
+  .switch{
+    width:42px;height:24px;
+    border-radius:999px;
+    background:var(--border);
+    position:relative;
+    cursor:pointer;
+    flex-shrink:0;
+    margin-left:12px;
+    transition:background .2s ease;
+  }
+  .switch.on{background:var(--accent);}
+  .switch::after{
+    content:'';
+    position:absolute;
+    top:2px;left:2px;
+    width:20px;height:20px;
+    border-radius:50%;
+    background:#fff;
+    transition:transform .2s ease;
+  }
+  .switch.on::after{transform:translateX(18px);}
+  .required{color:var(--accent);font-size:11px;margin-left:4px;}
+  .photogrid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin-top:8px;
+  }
+  .photoslot{
+    aspect-ratio:3/4;
+    border-radius:12px;
+    background:var(--card2);
+    border:1.5px dashed var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+    color:var(--muted);
+    cursor:pointer;
+    position:relative;
+  }
+  .photoslot.main::before{
+    content:'MAIN';
+    position:absolute;
+    bottom:5px;left:5px;
+    font-size:8px;
+    letter-spacing:.05em;
+    background:rgba(0,0,0,.5);
+    padding:2px 5px;
+    border-radius:5px;
+    color:var(--muted);
+  }
+  .slider-block{margin-top:6px;}
+  .slider-val{
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  input[type=range]{
+    width:100%;
+    accent-color:var(--accent);
+  }
+  .statusbadge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:11.5px;
+    color:var(--muted);
+    background:var(--card2);
+    border:1px solid var(--border);
+    padding:5px 10px;
+    border-radius:999px;
+    margin-top:10px;
+  }
+  .dot{
+    width:7px;height:7px;
+    border-radius:50%;
+    background:var(--online);
+    box-shadow:0 0 6px var(--online);
+  }
+  .footer{
+    padding:14px 24px 26px;
+    border-top:1px solid var(--border);
+    background:var(--card);
+  }
+  .nextbtn{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:16px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;
+    font-size:15.5px;
+    font-weight:700;
+    cursor:pointer;
+    letter-spacing:.01em;
+  }
+  .nextbtn:disabled{
+    opacity:.35;
+    cursor:not-allowed;
+  }
+  .hint{
+    text-align:center;
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:10px;
+  }
+  .previewcard{
+    background:var(--card2);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:16px;
+    margin-top:6px;
+  }
+  .prow{
+    display:flex;
+    justify-content:space-between;
+    padding:8px 0;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+  }
+  .prow:last-child{border-bottom:none;}
+  .prow .k{color:var(--muted);}
+  .prow .v{font-weight:600;text-align:right;max-width:60%;}
+  .expirenote{
+    font-size:11.5px;
+    color:#ffb199;
+    margin-top:8px;
+  }
+  .done-screen{
+    text-align:center;
+    padding-top:60px;
+  }
+  .done-icon{
+    width:72px;height:72px;
+    border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 20px;
+    font-size:32px;
+  }
+  .checkbox-row{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:12px;
+    cursor:pointer;
+    line-height:1.4;
+  }
+  .checkbox-row input[type=checkbox]{
+    width:18px;height:18px;
+    margin-top:1px;
+    accent-color:var(--accent);
+    flex-shrink:0;
+    cursor:pointer;
+  }
+  .modal-link{
+    color:var(--text);
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .footlinks{
+    text-align:center;
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:16px;
+  }
+  .modal-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    z-index:50;
+    display:none;
+    align-items:flex-end;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-sheet{
+    background:var(--card);
+    width:100%;
+    max-height:78%;
+    border-radius:24px 24px 0 0;
+    padding:20px 22px 28px;
+    overflow-y:auto;
+    animation:slideUp .25s ease;
+    position:relative;
+  }
+  @keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-sheet h2{margin:6px 0 4px;font-size:19px;}
+  .modal-close{
+    position:absolute;
+    top:14px;right:16px;
+    width:30px;height:30px;
+    border-radius:50%;
+    background:var(--card2);
+    border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .modal-sheet p{
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.55;
+    margin:0 0 12px;
+  }
+  .modal-sheet .updated{font-size:11px;color:#5c5c66;margin-bottom:16px;}
+  .contact-confirm{
+    font-size:12.5px;
+    color:var(--online);
+    margin-top:10px;
+    min-height:16px;
+  }
+  select{
+    width:100%;
+    background:var(--card2);
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    padding:12px 14px;
+    color:var(--text);
+    font-size:14px;
+    font-family:inherit;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="topbar">
+    <div class="backbtn" id="backBtn" onclick="goBack()">‹</div>
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <div class="pagewrap">
+
+    <!-- PAGE 1: Sign up -->
+    <div class="page" data-page="1">
+      <div style="text-align:center;padding-top:20px;margin-bottom:8px;">
+        <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+          <svg viewBox="0 0 200 200" width="34" height="34" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="96" r="70" fill="none" stroke="#ffffff" stroke-width="6" stroke-dasharray="12 12" opacity="0.55"/>
+            <path d="M18 128 C48 100 68 140 100 112 C132 84 152 124 182 96" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+            <path d="M100 124 C76 104 56 86 56 64 C56 48 68 36 84 36 C92 36 100 42 100 52 C100 42 108 36 116 36 C132 36 144 48 144 64 C144 86 124 104 100 124 Z" fill="#ffffff"/>
+          </svg>
+        </div>
+        <h1 style="margin-bottom:2px;">Melb Twenty</h1>
+        <p class="sub" style="margin-bottom:0;">Sign up to get started.</p>
+      </div>
+      <div class="qgroup">
+        <div class="qlabel">Email <span class="required">*</span></div>
+        <input type="text" id="suEmail" placeholder="you@email.com">
+      </div>
+      <div class="qgroup">
+        <div class="qlabel">Password <span class="required">*</span></div>
+        <input type="text" id="suPass" placeholder="Create a password">
+      </div>
+      <div class="qgroup">
+        <div class="qlabel">Confirm password <span class="required">*</span></div>
+        <input type="text" id="suPass2" placeholder="Re-enter password">
+      </div>
+      <div class="hint" style="margin-top:2px;margin-bottom:16px;">No Google / Apple sign-in — email only, so we don't get stuck on OAuth again.</div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="cbAge">
+        <span>I confirm I'm 18 years or older <span class="required">*</span></span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="cbTerms">
+        <span>I agree to the <span class="modal-link" data-modal="modalTerms">Terms of Service</span> and <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> <span class="required">*</span></span>
+      </label>
+
+      <div class="hint" style="margin-top:10px;">Already have an account? <span style="color:var(--text);text-decoration:underline;cursor:pointer;">Log in</span></div>
+
+      <div class="footlinks">
+        <span class="modal-link" data-modal="modalTerms">Terms</span> &nbsp;·&nbsp;
+        <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> &nbsp;·&nbsp;
+        <span class="modal-link" data-modal="modalContact">Contact / Support</span>
+      </div>
+    </div>
+
+    <!-- PAGE 2: Side -->
+    <div class="page" data-page="2">
+      <h1>Where are you?</h1>
+      <p class="sub">This sets your default area so matches make sense from day one.</p>
+      <div class="qgroup">
+        <div class="qlabel">Side of town</div>
+        <div class="options" id="q1">
+          <div class="opt" data-val="North side">North side</div>
+          <div class="opt" data-val="South side">South side</div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: Orientation + Intent -->
+    <div class="page" data-page="3">
+      <h1>Who & when</h1>
+      <p class="sub">Helps us show you the right people at the right moment.</p>
+      <div class="qgroup">
+        <div class="qlabel">Orientation</div>
+        <div class="options" id="q2a">
+          <div class="opt" data-val="LGBTQ+">LGBTQ+</div>
+          <div class="opt" data-val="Hetero">Hetero</div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+      </div>
+      <div class="qgroup">
+        <div class="qlabel">Intent</div>
+        <div class="options" id="q2b">
+          <div class="opt" data-val="Looking now">Looking now<small>Connection expires in 2 hours</small></div>
+          <div class="opt" data-val="Planning ahead">Planning ahead<small>No time limit</small></div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: Style + Structure -->
+    <div class="page" data-page="4">
+      <h1>Your style</h1>
+      <p class="sub">Be honest — it makes matching better for everyone.</p>
+      <div class="qgroup">
+        <div class="qlabel">Vanilla or kink</div>
+        <div class="options" id="q3a">
+          <div class="opt" data-val="Vanilla">Vanilla</div>
+          <div class="opt" data-val="Kink">Kink</div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+        <div class="kink-tags" id="kinkTags">
+          <div class="qlabel">Tags <span style="font-weight:400;text-transform:none;color:var(--muted)">(select all that apply)</span></div>
+          <div class="chips" id="q3a-tags">
+            <div class="chip" data-val="Dom">Dom</div>
+            <div class="chip" data-val="Sub">Sub</div>
+            <div class="chip" data-val="Switch">Switch</div>
+            <div class="chip" data-val="Rope/Shibari">Rope/Shibari</div>
+            <div class="chip" data-val="Impact play">Impact play</div>
+            <div class="chip" data-val="Voyeur">Voyeur</div>
+            <div class="chip" data-val="Exhibitionist">Exhibitionist</div>
+            <div class="chip" data-val="Roleplay">Roleplay</div>
+            <div class="chip" data-val="Poly-curious">Poly-curious</div>
+            <div class="chip" data-val="Sensory">Sensory</div>
+          </div>
+        </div>
+      </div>
+      <div class="qgroup">
+        <div class="qlabel">Relationship structure</div>
+        <div class="options" id="q3b">
+          <div class="opt" data-val="Monogamy">Monogamy</div>
+          <div class="opt" data-val="Non-monogamy">Non-monogamy</div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 5: Search settings -->
+    <div class="page" data-page="5">
+      <h1>Search settings</h1>
+      <p class="sub">Starting point only — all of this is changeable later in Settings.</p>
+
+      <div class="qgroup">
+        <div class="qlabel">Genders you want to see</div>
+        <div class="chips" id="q4-genders">
+          <div class="chip" data-val="Women">Women</div>
+          <div class="chip" data-val="Men">Men</div>
+          <div class="chip" data-val="Nonbinary">Nonbinary</div>
+          <div class="chip" data-val="Everyone">Everyone</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Age range</div>
+        <div class="slider-block">
+          <div class="slider-val" id="ageVal">22 – 40</div>
+          <input type="range" id="ageMin" min="18" max="70" value="22" oninput="updateAge()">
+          <input type="range" id="ageMax" min="18" max="70" value="40" oninput="updateAge()">
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Radius</div>
+        <div class="slider-block">
+          <div class="slider-val" id="radiusVal">15 miles</div>
+          <input type="range" id="radius" min="1" max="100" value="15" oninput="updateRadius()">
+        </div>
+      </div>
+      <div class="statusbadge"><span class="dot"></span> These filters live in Settings → Search, editable anytime</div>
+    </div>
+
+    <!-- PAGE 6: Profile -->
+    <div class="page" data-page="6">
+      <h1>Your profile</h1>
+      <p class="sub">Required fields are marked. You control what's public.</p>
+
+      <div class="qgroup">
+        <div class="qlabel">Name <span class="required">*</span></div>
+        <input type="text" id="pName" placeholder="Enter your name">
+        <div class="toggle-row">
+          <div class="lbl">Display name on profile<small>Off shows initials only</small></div>
+          <div class="switch on" id="toggleNameShow" onclick="toggleSwitch('toggleNameShow')"></div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Gender <span class="required">*</span></div>
+        <div class="chips" id="q5-gender">
+          <div class="chip" data-val="Woman">Woman</div>
+          <div class="chip" data-val="Man">Man</div>
+          <div class="chip" data-val="Nonbinary">Nonbinary</div>
+          <div class="chip" data-val="Other">Other</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Bio <span class="required">*</span></div>
+        <textarea id="pBio" placeholder="Tell people a bit about you..."></textarea>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Photos <span class="required">*</span> <span style="font-weight:400;text-transform:none;color:var(--muted)">(min. 1)</span></div>
+        <div class="photogrid" id="photoGrid">
+          <div class="photoslot main">+</div>
+          <div class="photoslot">+</div>
+          <div class="photoslot">+</div>
+          <div class="photoslot">+</div>
+          <div class="photoslot">+</div>
+          <div class="photoslot">+</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Interests <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional)</span></div>
+        <div class="chips" id="q5-interests">
+          <div class="chip" data-val="Hiking">Hiking</div>
+          <div class="chip" data-val="Live music">Live music</div>
+          <div class="chip" data-val="Cooking">Cooking</div>
+          <div class="chip" data-val="Travel">Travel</div>
+          <div class="chip" data-val="Fitness">Fitness</div>
+          <div class="chip" data-val="Art">Art</div>
+          <div class="chip" data-val="Gaming">Gaming</div>
+          <div class="chip" data-val="Reading">Reading</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="toggle-row">
+          <div class="lbl">Show online status<small>"Online now" badge visible to others</small></div>
+          <div class="switch on" id="toggleOnline" onclick="toggleSwitch('toggleOnline')"></div>
+        </div>
+        <div class="toggle-row">
+          <div class="lbl">Show last seen<small>"Active 3h ago" shown when offline</small></div>
+          <div class="switch on" id="toggleLastSeen" onclick="toggleSwitch('toggleLastSeen')"></div>
+        </div>
+        <div class="statusbadge"><span class="dot"></span> Preview: Online now</div>
+      </div>
+    </div>
+
+    <!-- PAGE 7: Review -->
+    <div class="page" data-page="7">
+      <div class="done-screen">
+        <div class="done-icon">✓</div>
+        <h1 style="text-align:center">You're set up</h1>
+        <p class="sub" style="text-align:center">Here's what we've got. Nothing here is locked in — edit anytime in Settings.</p>
+      </div>
+      <div class="previewcard" id="reviewCard"></div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <button class="nextbtn" id="nextBtn" onclick="goNext()">Continue</button>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <!-- MODAL: Privacy Policy -->
+  <div class="modal-overlay" id="modalPrivacy">
+    <div class="modal-sheet">
+      <div class="modal-close" onclick="closeModal('modalPrivacy')">✕</div>
+      <h2>Privacy Policy</h2>
+      <div class="updated">Placeholder — last updated July 2026</div>
+      <p><strong style="color:var(--text)">What we collect:</strong> your email, approximate location (used only for side-of-town and radius matching — we never show an exact pin), photos, bio, and the preferences you choose to share (orientation, intent, kink tags, relationship structure).</p>
+      <p><strong style="color:var(--text)">How it's used:</strong> to power matching and keep the app safe. We don't sell your data to advertisers or third parties.</p>
+      <p><strong style="color:var(--text)">Visibility:</strong> sensitive preferences like kink tags and relationship structure are only shown the way you set in your profile — you control what's public.</p>
+      <p><strong style="color:var(--text)">Your rights:</strong> request a full data export or delete your account anytime from Settings → Privacy, or via Contact below.</p>
+      <p style="margin-bottom:0;">Questions? <span class="modal-link" onclick="closeModal('modalPrivacy');openModal('modalContact');document.getElementById('contactSubject').value='Privacy request';">Contact our privacy team</span>.</p>
+    </div>
+  </div>
+
+  <!-- MODAL: Terms of Service -->
+  <div class="modal-overlay" id="modalTerms">
+    <div class="modal-sheet">
+      <div class="modal-close" onclick="closeModal('modalTerms')">✕</div>
+      <h2>Terms of Service</h2>
+      <div class="updated">Placeholder — last updated July 2026</div>
+      <p><strong style="color:var(--text)">Eligibility:</strong> you must be 18 or older to create an account.</p>
+      <p><strong style="color:var(--text)">Conduct:</strong> harassment, hate speech, and non-consensual sharing of images or messages will get your account banned.</p>
+      <p><strong style="color:var(--text)">Zero tolerance:</strong> content involving minors, non-consent, or illegal activity is never permitted and will be reported to authorities.</p>
+      <p><strong style="color:var(--text)">Your account:</strong> you're responsible for what you post and how you interact with matches. We can suspend or remove accounts that violate these terms.</p>
+      <p style="margin-bottom:0;">Full terms available at melbtwenty.app/terms (placeholder link).</p>
+    </div>
+  </div>
+
+  <!-- MODAL: Contact -->
+  <div class="modal-overlay" id="modalContact">
+    <div class="modal-sheet">
+      <div class="modal-close" onclick="closeModal('modalContact')">✕</div>
+      <h2>Contact & Support</h2>
+      <p style="margin-bottom:16px;">We typically reply within 24 hours.</p>
+      <div class="qgroup">
+        <div class="qlabel">Subject</div>
+        <select id="contactSubject">
+          <option>General question</option>
+          <option>Safety concern</option>
+          <option>Privacy request</option>
+          <option>Bug report</option>
+          <option>Account issue</option>
+        </select>
+      </div>
+      <div class="qgroup">
+        <div class="qlabel">Your email</div>
+        <input type="text" id="contactEmail" placeholder="you@email.com">
+      </div>
+      <div class="qgroup">
+        <div class="qlabel">Message</div>
+        <textarea id="contactMessage" placeholder="How can we help?"></textarea>
+      </div>
+      <button class="nextbtn" onclick="sendContact()">Send message</button>
+      <div class="contact-confirm" id="contactHint"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const totalPages = 7;
+let current = 1;
+const state = {
+  email:'', password:'', ageConfirmed:false, agreedTerms:false,
+  side:null, orientation:null, intent:null,
+  style:null, kinkTags:[], structure:null,
+  genders:[], ageMin:22, ageMax:40, radius:15,
+  name:'', showName:true, gender:null, bio:'', photos:0,
+  interests:[], showOnline:true, showLastSeen:true
+};
+
+function buildProgress(){
+  const p = document.getElementById('progress');
+  p.innerHTML = '';
+  for(let i=1;i<=totalPages-1;i++){
+    const seg = document.createElement('div');
+    seg.className='seg';
+    seg.innerHTML = '<i id="seg'+i+'"></i>';
+    p.appendChild(seg);
+  }
+}
+buildProgress();
+
+function renderProgress(){
+  for(let i=1;i<totalPages;i++){
+    const bar = document.getElementById('seg'+i);
+    if(!bar) continue;
+    bar.style.width = i < current ? '100%' : (i===current ? '100%' : '0%');
+  }
+}
+
+function showPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.page[data-page="'+n+'"]').classList.add('active');
+  document.getElementById('backBtn').classList.toggle('show', n>1);
+  document.getElementById('nextBtn').textContent = n===totalPages ? 'Enter the app' : (n===totalPages-1 ? 'Finish' : 'Continue');
+  document.getElementById('hint').textContent = '';
+  if(n===totalPages){ document.getElementById('progress').style.display='none'; renderReview(); }
+  else { document.getElementById('progress').style.display='flex'; renderProgress(); }
+  updateNextState();
+}
+
+function goNext(){
+  if(!validate(current)) return;
+  if(current < totalPages){ current++; showPage(current); }
+  else { document.getElementById('hint').textContent = 'Mockup complete — this would hand off to the main app.'; }
+}
+function goBack(){
+  if(current>1){ current--; showPage(current); }
+}
+
+function selectSingle(groupId, key){
+  document.querySelectorAll('#'+groupId+' .opt').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('#'+groupId+' .opt').forEach(o=>o.classList.remove('selected'));
+      el.classList.add('selected');
+      state[key] = el.dataset.val;
+      if(groupId==='q3a'){
+        const open = (el.dataset.val==='Kink' || el.dataset.val==='Both');
+        document.getElementById('kinkTags').classList.toggle('open', open);
+      }
+      updateNextState();
+    });
+  });
+}
+function selectMulti(groupId, key, chipClass){
+  document.querySelectorAll('#'+groupId+' .'+chipClass).forEach(el=>{
+    el.addEventListener('click', ()=>{
+      el.classList.toggle('selected');
+      const val = el.dataset.val;
+      const arr = state[key];
+      const idx = arr.indexOf(val);
+      if(idx>-1) arr.splice(idx,1); else arr.push(val);
+      updateNextState();
+    });
+  });
+}
+
+selectSingle('q1','side');
+selectSingle('q2a','orientation');
+selectSingle('q2b','intent');
+selectSingle('q3a','style');
+selectSingle('q3b','structure');
+selectMulti('q3a-tags','kinkTags','chip');
+selectMulti('q4-genders','genders','chip');
+selectMulti('q5-gender','__genderSingle','chip'); // temp, overridden below
+selectMulti('q5-interests','interests','chip');
+
+// gender on profile page should be single-select, override:
+document.querySelectorAll('#q5-gender .chip').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('#q5-gender .chip').forEach(o=>o.classList.remove('selected'));
+    el.classList.add('selected');
+    state.gender = el.dataset.val;
+    updateNextState();
+  });
+});
+
+document.getElementById('cbAge').addEventListener('change', e=>{ state.ageConfirmed = e.target.checked; updateNextState(); });
+document.getElementById('cbTerms').addEventListener('change', e=>{ state.agreedTerms = e.target.checked; updateNextState(); });
+
+document.querySelectorAll('.modal-link[data-modal]').forEach(el=>{
+  el.addEventListener('click', ()=> openModal(el.dataset.modal));
+});
+function openModal(id){
+  if(id==='modalContact'){ document.getElementById('contactEmail').value = state.email || ''; }
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('open'); });
+});
+function sendContact(){
+  const msg = document.getElementById('contactMessage').value.trim();
+  const hint = document.getElementById('contactHint');
+  if(!msg){ hint.style.color = 'var(--accent)'; hint.textContent = 'Add a message before sending.'; return; }
+  hint.style.color = 'var(--online)';
+  hint.textContent = 'Message sent — we typically reply within 24 hours.';
+  document.getElementById('contactMessage').value = '';
+}
+
+document.getElementById('suEmail').addEventListener('input', e=>{ state.email = e.target.value; updateNextState(); });
+document.getElementById('suPass').addEventListener('input', e=>{ state.password = e.target.value; updateNextState(); });
+document.getElementById('suPass2').addEventListener('input', e=>{ state.password2 = e.target.value; updateNextState(); });
+document.getElementById('pName').addEventListener('input', e=>{ state.name = e.target.value; updateNextState(); });
+document.getElementById('pBio').addEventListener('input', e=>{ state.bio = e.target.value; updateNextState(); });
+document.querySelectorAll('.photoslot').forEach((el,i)=>{
+  el.addEventListener('click', ()=>{
+    if(el.textContent.trim()==='+'){
+      el.textContent = '📷';
+      state.photos++;
+    } else {
+      el.textContent = '+';
+      state.photos--;
+    }
+    updateNextState();
+  });
+});
+
+function toggleSwitch(id){
+  const el = document.getElementById(id);
+  el.classList.toggle('on');
+  const map = {toggleNameShow:'showName', toggleOnline:'showOnline', toggleLastSeen:'showLastSeen'};
+  state[map[id]] = el.classList.contains('on');
+}
+
+function updateAge(){
+  let min = parseInt(document.getElementById('ageMin').value);
+  let max = parseInt(document.getElementById('ageMax').value);
+  if(min>max-1){ min = max-1; document.getElementById('ageMin').value = min; }
+  state.ageMin = min; state.ageMax = max;
+  document.getElementById('ageVal').textContent = min+' – '+max;
+}
+function updateRadius(){
+  state.radius = document.getElementById('radius').value;
+  document.getElementById('radiusVal').textContent = state.radius + ' miles';
+}
+
+function validate(page){
+  if(page===1){
+    if(!state.email || !state.password || state.password !== state.password2){
+      document.getElementById('hint').textContent = !state.email || !state.password ? 'Enter an email and password.' : 'Passwords don\'t match.';
+      return false;
+    }
+    if(!state.ageConfirmed || !state.agreedTerms){
+      document.getElementById('hint').textContent = 'Confirm you\'re 18+ and agree to the Terms & Privacy Policy to continue.';
+      return false;
+    }
+  }
+  if(page===6){
+    if(!state.name || !state.gender || !state.bio || state.photos<1){
+      document.getElementById('hint').textContent = 'Fill required fields: name, gender, bio, and at least 1 photo.';
+      return false;
+    }
+  }
+  return true;
+}
+function updateNextState(){
+  const btn = document.getElementById('nextBtn');
+  btn.disabled = false; // mockup: keep enabled, validation message shows on click for page 5
+}
+
+function renderReview(){
+  const rows = [
+    ['Email', state.email],
+    ['Age confirmed (18+)', state.ageConfirmed ? 'Yes' : 'No'],
+    ['Terms & Privacy agreed', state.agreedTerms ? 'Yes' : 'No'],
+    ['Side', state.side],
+    ['Orientation', state.orientation],
+    ['Intent', state.intent],
+    ['Style', state.style + (state.kinkTags.length ? ' — ' + state.kinkTags.join(', ') : '')],
+    ['Structure', state.structure],
+    ['Search genders', state.genders.join(', ') || '—'],
+    ['Age range', state.ageMin+'–'+state.ageMax],
+    ['Radius', state.radius+' mi'],
+    ['Name', (state.name||'—') + (state.showName ? '' : ' (hidden, initials shown)')],
+    ['Gender', state.gender],
+    ['Photos', state.photos + ' uploaded'],
+    ['Interests', state.interests.join(', ') || '—'],
+    ['Online status', state.showOnline ? 'Visible — "Online now"' : 'Hidden'],
+    ['Last seen', state.showLastSeen ? 'Visible — "Active 3h ago"' : 'Hidden'],
+  ];
+  const card = document.getElementById('reviewCard');
+  card.innerHTML = rows.map(r=>
+    '<div class="prow"><span class="k">'+r[0]+'</span><span class="v">'+(r[1]||'—')+'</span></div>'
+  ).join('') + '<div class="expirenote">If Intent = "Looking now," this profile\'s active match window expires 2 hours after setup.</div>';
+}
+
+showPage(1);
+</script>
+
+</body>
+</html>
