@@ -287,6 +287,27 @@
     border-top:1px solid var(--border);
     background:var(--card);
   }
+  .appnav{
+    display:none;
+    border-top:1px solid var(--border);
+    background:var(--card);
+    padding:10px 8px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .appnav.show{ display:flex; }
+  .navitem{
+    flex:1;
+    text-align:center;
+    padding:8px 4px;
+    font-size:12px;
+    color:var(--muted);
+    cursor:pointer;
+    border-radius:10px;
+  }
+  .navitem.active{
+    color:var(--text);
+    font-weight:700;
+    background:var(--card2);
+  }
   .nextbtn{
     width:100%;
     padding:16px;
@@ -678,31 +699,28 @@
 
     <!-- PAGE 8: Discovery -->
     <div class="page" data-page="8">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h1 style="margin:0;">Discover</h1>
-        <div>
-          <span class="modal-link" onclick="current=9;showPage(9);">Messages</span>
-          &nbsp;·&nbsp;
-          <span class="modal-link" onclick="doLogout()">Log out</span>
-        </div>
-      </div>
+      <h1 style="margin:0;">Discover</h1>
       <p class="sub">People near you, closest first.</p>
       <div class="hint" id="discoveryHint" style="margin-bottom:12px;"></div>
       <div id="discoveryCards"></div>
     </div>
 
-    <!-- PAGE 9: Matches list -->
+    <!-- PAGE 9: Likes -->
     <div class="page" data-page="9">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h1 style="margin:0;">Messages</h1>
-        <span class="modal-link" onclick="current=8;showPage(8);">Discover</span>
-      </div>
-      <p class="sub">Your matches.</p>
+      <h1 style="margin:0;">Likes</h1>
+      <p class="sub">Everyone you've liked.</p>
+      <div id="likesList"></div>
+    </div>
+
+    <!-- PAGE 10: Matches -->
+    <div class="page" data-page="10">
+      <h1 style="margin:0;">Matches</h1>
+      <p class="sub">Mutual likes — tap to chat.</p>
       <div id="matchesList"></div>
     </div>
 
-    <!-- PAGE 10: Chat thread -->
-    <div class="page" data-page="10">
+    <!-- PAGE 11: Chat thread -->
+    <div class="page" data-page="11">
       <h1 id="chatTitle" style="margin-bottom:6px;">Chat</h1>
       <div id="chatMessages" style="margin-bottom:12px;"></div>
       <div style="display:flex;gap:8px;">
@@ -712,6 +730,53 @@
       <div class="hint" id="chatHint"></div>
     </div>
 
+    <!-- PAGE 12: Settings -->
+    <div class="page" data-page="12">
+      <h1 style="margin:0 0 14px;">Settings</h1>
+
+      <div class="qgroup">
+        <div class="qlabel">Genders you want to see</div>
+        <div class="chips" id="setGenders">
+          <div class="chip" data-val="Women">Women</div>
+          <div class="chip" data-val="Men">Men</div>
+          <div class="chip" data-val="Nonbinary">Nonbinary</div>
+          <div class="chip" data-val="Everyone">Everyone</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Age range</div>
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="setAgeMin" placeholder="Min age" style="flex:1;">
+          <input type="text" id="setAgeMax" placeholder="Max age" style="flex:1;">
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Radius (km)</div>
+        <input type="text" id="setRadius" placeholder="Radius in km">
+      </div>
+
+      <button class="nextbtn" onclick="saveSettings()">Save settings</button>
+      <div class="hint" id="settingsHint" style="margin-top:10px;"></div>
+
+      <div class="footlinks" style="margin-top:26px;">
+        <span class="modal-link" data-modal="modalTerms">Terms</span> &nbsp;·&nbsp;
+        <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> &nbsp;·&nbsp;
+        <span class="modal-link" data-modal="modalContact">Contact / Support</span>
+      </div>
+      <div class="footlinks" style="margin-top:14px;">
+        <span class="modal-link" onclick="doLogout()">Log out</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="appnav" id="appnav">
+    <div class="navitem" data-nav="8" onclick="navTo(8)">Discover</div>
+    <div class="navitem" data-nav="9" onclick="navTo(9)">Likes</div>
+    <div class="navitem" data-nav="10" onclick="navTo(10)">Matches</div>
+    <div class="navitem" data-nav="12" onclick="navTo(12)">Settings</div>
   </div>
 
   <div class="footer">
@@ -835,18 +900,33 @@ function renderProgress(){
 
 const NEXT_LABELS = {6:'Finish', 7:'Enter the app'};
 
+const NAV_TAB_MAP = {8:8, 9:9, 10:10, 11:10, 12:12};
+
+function navTo(n){
+  current = n;
+  showPage(n);
+}
+
 function showPage(n){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelector('.page[data-page="'+n+'"]').classList.add('active');
-  document.getElementById('backBtn').classList.toggle('show', n>1);
+  document.getElementById('backBtn').classList.toggle('show', n>1 && n<8);
   document.getElementById('nextBtn').textContent = NEXT_LABELS[n] || 'Continue';
   document.getElementById('hint').textContent = '';
   document.querySelector('.footer').style.display = (n>=8) ? 'none' : '';
+  document.getElementById('appnav').classList.toggle('show', n>=8);
+
+  const activeTab = NAV_TAB_MAP[n];
+  document.querySelectorAll('.navitem').forEach(el=>{
+    el.classList.toggle('active', parseInt(el.dataset.nav)===activeTab);
+  });
 
   if(n===7){ document.getElementById('progress').style.display='none'; renderReview(); }
   else if(n===8){ document.getElementById('progress').style.display='none'; loadDiscovery(); }
-  else if(n===9){ document.getElementById('progress').style.display='none'; loadMatches(); }
-  else if(n===10){ document.getElementById('progress').style.display='none'; loadChatThread(); }
+  else if(n===9){ document.getElementById('progress').style.display='none'; loadLikes(); }
+  else if(n===10){ document.getElementById('progress').style.display='none'; loadMatches(); }
+  else if(n===11){ document.getElementById('progress').style.display='none'; loadChatThread(); }
+  else if(n===12){ document.getElementById('progress').style.display='none'; loadSettings(); }
   else { document.getElementById('progress').style.display='flex'; renderProgress(); }
   updateNextState();
 }
@@ -938,11 +1018,19 @@ async function loadDiscovery(){
 
   if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
 
+  const { data: myLikes } = await sb.from('likes').select('liked_id').eq('liker_id', state.userId);
+  const { data: myPasses } = await sb.from('passes').select('passed_id').eq('passer_id', state.userId);
+  const excludeIds = new Set([
+    ...(myLikes||[]).map(l=>l.liked_id),
+    ...(myPasses||[]).map(p=>p.passed_id)
+  ]);
+
   const wanted = (mySettings.genders && mySettings.genders.length) ? mySettings.genders : ['Everyone'];
   const wantedSingular = wanted.map(g => GENDER_MAP[g] || g);
   const wantsEveryone = wanted.includes('Everyone');
 
   const filtered = candidates
+    .filter(c => !excludeIds.has(c.id))
     .filter(c => c.lat!=null && c.lng!=null)
     .map(c => ({...c, _distance: distanceKm(myProfile.lat, myProfile.lng, c.lat, c.lng)}))
     .filter(c => c._distance <= (mySettings.radius_km || 9999))
@@ -977,9 +1065,10 @@ async function loadDiscovery(){
   });
 }
 
-function passCandidate(id){
+async function passCandidate(id){
   const card = document.querySelector('[data-candidate="'+id+'"]');
   if(card) card.remove();
+  await sb.from('passes').insert({ passer_id: state.userId, passed_id: id });
   checkEmpty();
 }
 
@@ -1040,8 +1129,8 @@ async function loadMatches(){
 function openChat(matchId, otherId){
   state.activeMatchId = matchId;
   state.activeMatchUser = otherId;
-  current = 10;
-  showPage(10);
+  current = 11;
+  showPage(11);
 }
 
 async function loadChatThread(){
@@ -1081,6 +1170,63 @@ function checkEmpty(){
   if(!container.querySelector('.discover-card')){
     container.innerHTML = '<div class="hint">That\'s everyone nearby for now — check back later.</div>';
   }
+}
+
+async function loadLikes(){
+  const container = document.getElementById('likesList');
+  container.innerHTML = '<div class="hint">Loading...</div>';
+
+  const { data: myLikes, error } = await sb.from('likes').select('liked_id').eq('liker_id', state.userId);
+  if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
+  if(!myLikes.length){ container.innerHTML = '<div class="hint">You haven\'t liked anyone yet — head to Discover.</div>'; return; }
+
+  const ids = myLikes.map(l=>l.liked_id);
+  const { data: profiles } = await sb.from('profiles').select('id,name,display_name,gender').in('id', ids);
+  const { data: matches } = await sb.from('matches').select('user_a,user_b').or('user_a.eq.'+state.userId+',user_b.eq.'+state.userId);
+  const matchedIds = new Set();
+  (matches||[]).forEach(m=>{ matchedIds.add(m.user_a===state.userId ? m.user_b : m.user_a); });
+  const profileMap = {};
+  (profiles||[]).forEach(p=>{ profileMap[p.id]=p; });
+
+  container.innerHTML = '';
+  ids.forEach(id=>{
+    const p = profileMap[id] || {};
+    const displayName = (p.display_name && p.name) ? p.name : 'Anonymous';
+    const isMatched = matchedIds.has(id);
+    const row = document.createElement('div');
+    row.className = 'discover-card';
+    row.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<h2 style="margin:0;font-size:16px;">'+displayName+'</h2>' +
+        '<span class="statusbadge">'+(isMatched ? 'Matched' : 'Pending')+'</span>' +
+      '</div>' +
+      '<div class="sub">'+(p.gender||'')+'</div>';
+    container.appendChild(row);
+  });
+}
+
+async function loadSettings(){
+  const { data: s } = await sb.from('search_settings').select('*').eq('user_id', state.userId).single();
+  document.querySelectorAll('#setGenders .chip').forEach(el=>{
+    el.classList.toggle('selected', !!(s && s.genders && s.genders.includes(el.dataset.val)));
+  });
+  document.getElementById('setAgeMin').value = s ? s.age_min : '';
+  document.getElementById('setAgeMax').value = s ? s.age_max : '';
+  document.getElementById('setRadius').value = s ? s.radius_km : '';
+  document.getElementById('settingsHint').textContent = '';
+}
+
+document.querySelectorAll('#setGenders .chip').forEach(el=>{
+  el.addEventListener('click', ()=> el.classList.toggle('selected'));
+});
+
+async function saveSettings(){
+  const genders = [...document.querySelectorAll('#setGenders .chip.selected')].map(el=>el.dataset.val);
+  const age_min = parseInt(document.getElementById('setAgeMin').value) || 18;
+  const age_max = parseInt(document.getElementById('setAgeMax').value) || 99;
+  const radius_km = parseInt(document.getElementById('setRadius').value) || 20;
+  const { error } = await sb.from('search_settings').upsert({ user_id: state.userId, genders, age_min, age_max, radius_km });
+  document.getElementById('settingsHint').textContent = error ? ('Save failed: ' + error.message) : 'Saved.';
 }
 
 function selectSingle(groupId, key){
