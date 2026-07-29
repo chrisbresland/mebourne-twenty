@@ -530,54 +530,74 @@
 
     <!-- PAGE 1: Sign up -->
     <div class="page" data-page="1">
-      <div style="text-align:center;padding-top:20px;margin-bottom:8px;">
-        <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
-          <svg viewBox="0 0 200 200" width="34" height="34" xmlns="http://www.w3.org/2000/svg">
+
+      <div id="welcomeChoice" style="text-align:center;padding-top:70px;">
+        <div style="width:84px;height:84px;border-radius:26px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;margin:0 auto 22px;">
+          <svg viewBox="0 0 200 200" width="44" height="44" xmlns="http://www.w3.org/2000/svg">
             <path d="M100,18 C108,18 114,26 116,40 C118,50 124,52 134,58 C152,66 168,78 176,96 C182,110 178,122 166,128 C158,132 152,136 150,144 C148,156 144,172 140,188 C138,194 130,194 128,186 C124,172 120,160 112,152 C104,144 96,148 90,150 C76,156 62,154 54,144 C46,134 44,120 48,104 C52,88 60,72 72,56 C80,46 86,36 88,26 C90,20 94,18 100,18 Z" fill="#ffffff" opacity="0.9"/>
             <path d="M100 128 C 86 112 74 98 74 82 C 74 70 82 62 92 62 C 97 62 100 66 100 73 C 100 66 103 62 108 62 C 118 62 126 70 126 82 C 126 98 114 112 100 128 Z" fill="#ff3d68"/>
           </svg>
         </div>
-        <h1 style="margin-bottom:2px;">Melb Twenty</h1>
-        <p class="sub" id="authSub" style="margin-bottom:0;">Sign up to get started.</p>
+        <h1 style="margin-bottom:8px;">Melb Twenty</h1>
+        <p class="sub" style="margin-bottom:40px;">Melbourne, within reach. North or south, right now or down the track.</p>
+        <button class="nextbtn" style="margin-bottom:12px;" onclick="setAuthMode('signup')">Create an account</button>
+        <button class="nextbtn" style="background:var(--card2);color:var(--text);" onclick="setAuthMode('login')">Log in</button>
       </div>
-      <div class="qgroup">
-        <div class="qlabel">Email <span class="required">*</span></div>
-        <input type="text" id="suEmail" placeholder="you@email.com">
-      </div>
-      <div class="qgroup">
-        <div class="qlabel">Password <span class="required">*</span></div>
-        <div class="pw-row">
-          <input type="password" id="suPass" placeholder="Create a password">
-          <button type="button" class="pw-toggle" id="suPassToggle" onclick="togglePw('suPass')">Show</button>
+
+      <div id="authForm" style="display:none;">
+        <div style="padding-top:14px;">
+          <span class="modal-link" onclick="setAuthMode('welcome')">&lsaquo; Back</span>
+        </div>
+        <div style="text-align:center;margin-bottom:8px;">
+          <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+            <svg viewBox="0 0 200 200" width="34" height="34" xmlns="http://www.w3.org/2000/svg">
+              <path d="M100,18 C108,18 114,26 116,40 C118,50 124,52 134,58 C152,66 168,78 176,96 C182,110 178,122 166,128 C158,132 152,136 150,144 C148,156 144,172 140,188 C138,194 130,194 128,186 C124,172 120,160 112,152 C104,144 96,148 90,150 C76,156 62,154 54,144 C46,134 44,120 48,104 C52,88 60,72 72,56 C80,46 86,36 88,26 C90,20 94,18 100,18 Z" fill="#ffffff" opacity="0.9"/>
+              <path d="M100 128 C 86 112 74 98 74 82 C 74 70 82 62 92 62 C 97 62 100 66 100 73 C 100 66 103 62 108 62 C 118 62 126 70 126 82 C 126 98 114 112 100 128 Z" fill="#ff3d68"/>
+            </svg>
+          </div>
+          <h1 style="margin-bottom:2px;">Melb Twenty</h1>
+          <p class="sub" id="authSub" style="margin-bottom:0;">Sign up to get started.</p>
+        </div>
+        <div class="qgroup">
+          <div class="qlabel">Email <span class="required">*</span></div>
+          <input type="text" id="suEmail" placeholder="you@email.com">
+        </div>
+        <div class="qgroup">
+          <div class="qlabel">Password <span class="required">*</span></div>
+          <div class="pw-row">
+            <input type="password" id="suPass" placeholder="Create a password">
+            <button type="button" class="pw-toggle" id="suPassToggle" onclick="togglePw('suPass')">Show</button>
+          </div>
+        </div>
+        <div class="qgroup" id="pwConfirmGroup">
+          <div class="qlabel">Confirm password <span class="required">*</span></div>
+          <div class="pw-row">
+            <input type="password" id="suPass2" placeholder="Re-enter password">
+            <button type="button" class="pw-toggle" id="suPass2Toggle" onclick="togglePw('suPass2')">Show</button>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:2px;margin-bottom:16px;">No Google / Apple sign-in — email only, so we don't get stuck on OAuth again.</div>
+
+        <div id="ageTermsWrap">
+          <label class="checkbox-row">
+            <input type="checkbox" id="cbAge">
+            <span>I confirm I'm 18 years or older <span class="required">*</span></span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="cbTerms">
+            <span>I agree to the <span class="modal-link" data-modal="modalTerms">Terms of Service</span> and <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> <span class="required">*</span></span>
+          </label>
+        </div>
+
+        <div class="hint" id="authSwitchLine" style="margin-top:10px;">Already have an account? <span style="color:var(--text);text-decoration:underline;cursor:pointer;" onclick="setAuthMode('login')">Log in</span></div>
+
+        <div class="footlinks">
+          <span class="modal-link" data-modal="modalTerms">Terms</span> &nbsp;·&nbsp;
+          <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> &nbsp;·&nbsp;
+          <span class="modal-link" data-modal="modalContact">Contact / Support</span>
         </div>
       </div>
-      <div class="qgroup" id="pwConfirmGroup">
-        <div class="qlabel">Confirm password <span class="required">*</span></div>
-        <div class="pw-row">
-          <input type="password" id="suPass2" placeholder="Re-enter password">
-          <button type="button" class="pw-toggle" id="suPass2Toggle" onclick="togglePw('suPass2')">Show</button>
-        </div>
-      </div>
-      <div class="hint" style="margin-top:2px;margin-bottom:16px;">No Google / Apple sign-in — email only, so we don't get stuck on OAuth again.</div>
 
-      <div id="ageTermsWrap">
-        <label class="checkbox-row">
-          <input type="checkbox" id="cbAge">
-          <span>I confirm I'm 18 years or older <span class="required">*</span></span>
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="cbTerms">
-          <span>I agree to the <span class="modal-link" data-modal="modalTerms">Terms of Service</span> and <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> <span class="required">*</span></span>
-        </label>
-      </div>
-
-      <div class="hint" id="authSwitchLine" style="margin-top:10px;">Already have an account? <span style="color:var(--text);text-decoration:underline;cursor:pointer;" onclick="setAuthMode('login')">Log in</span></div>
-
-      <div class="footlinks">
-        <span class="modal-link" data-modal="modalTerms">Terms</span> &nbsp;·&nbsp;
-        <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> &nbsp;·&nbsp;
-        <span class="modal-link" data-modal="modalContact">Contact / Support</span>
-      </div>
     </div>
 
     <!-- PAGE 2: Side -->
@@ -963,7 +983,7 @@ const totalPages = 8;
 const ONBOARDING_STEPS = 6;
 let current = 1;
 const state = {
-  authMode:'signup',
+  authMode:'welcome',
   email:'', password:'', ageConfirmed:false, agreedTerms:false,
   side:null, orientation:null, intent:null,
   style:null, kinkTags:[], structure:null,
@@ -1003,7 +1023,12 @@ function togglePw(id){
 
 function setAuthMode(mode){
   state.authMode = mode;
+  const welcome = mode === 'welcome';
   const login = mode === 'login';
+  document.getElementById('welcomeChoice').style.display = welcome ? '' : 'none';
+  document.getElementById('authForm').style.display = welcome ? 'none' : '';
+  document.querySelector('.footer').style.display = welcome ? 'none' : '';
+  if(welcome){ document.getElementById('hint').textContent = ''; return; }
   document.getElementById('pwConfirmGroup').style.display = login ? 'none' : '';
   document.getElementById('ageTermsWrap').style.display = login ? 'none' : '';
   document.getElementById('authSub').textContent = login ? 'Log in to continue.' : 'Sign up to get started.';
@@ -1057,7 +1082,7 @@ function showPage(n){
   document.getElementById('backBtn').classList.toggle('show', n>1 && n<8);
   document.getElementById('nextBtn').textContent = NEXT_LABELS[n] || 'Continue';
   document.getElementById('hint').textContent = '';
-  document.querySelector('.footer').style.display = (n>=8) ? 'none' : '';
+  document.querySelector('.footer').style.display = (n>=8 || (n===1 && state.authMode==='welcome')) ? 'none' : '';
   document.getElementById('appnav').classList.toggle('show', n>=8);
 
   const activeTab = NAV_TAB_MAP[n];
@@ -1427,8 +1452,8 @@ async function revealPhoto(id, path, el){
   await sb.from('messages').update({ image_viewed_at: new Date().toISOString(), image_destroyed: true }).eq('id', id);
   const wrap = el.parentElement;
   wrap.innerHTML = '<img src="'+data.signedUrl+'" style="max-width:220px;max-height:280px;border-radius:12px;display:block;margin-left:auto;object-fit:cover;">' +
-    '<div class="sub" style="font-size:10.5px;margin-top:4px;">This photo disappears in a few seconds.</div>';
-  setTimeout(refreshMessages, 6000);
+    '<div class="sub" style="font-size:10.5px;margin-top:4px;">This photo disappears in 10 seconds.</div>';
+  setTimeout(refreshMessages, 10000);
 }
 
 async function sendPhoto(event){
