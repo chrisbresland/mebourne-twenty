@@ -651,12 +651,12 @@
       <div class="qgroup">
         <div class="qlabel">Photos <span class="required">*</span> <span style="font-weight:400;text-transform:none;color:var(--muted)">(min. 1)</span></div>
         <div class="photogrid" id="photoGrid">
-          <div class="photoslot main">+</div>
-          <div class="photoslot">+</div>
-          <div class="photoslot">+</div>
-          <div class="photoslot">+</div>
-          <div class="photoslot">+</div>
-          <div class="photoslot">+</div>
+          <label class="photoslot main" id="slot0"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,0)"></label>
+          <label class="photoslot" id="slot1"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,1)"></label>
+          <label class="photoslot" id="slot2"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,2)"></label>
+          <label class="photoslot" id="slot3"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,3)"></label>
+          <label class="photoslot" id="slot4"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,4)"></label>
+          <label class="photoslot" id="slot5"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,5)"></label>
         </div>
       </div>
 
@@ -1043,13 +1043,22 @@ async function loadDiscovery(){
     return;
   }
 
+  const { data: photos } = await sb.from('photos').select('user_id,url').eq('is_main', true).in('user_id', filtered.map(c=>c.id));
+  const photoMap = {};
+  (photos||[]).forEach(p=>{ photoMap[p.user_id] = p.url; });
+
   filtered.forEach(c=>{
     const card = document.createElement('div');
     card.className = 'discover-card';
     card.dataset.candidate = c.id;
     const displayName = (c.display_name && c.name) ? c.name : 'Anonymous';
     const chips = (c.interests||[]).map(i=>'<span class="chip selected" style="cursor:default">'+i+'</span>').join('');
+    const photoUrl = photoMap[c.id];
+    const photoHtml = photoUrl
+      ? '<img src="'+photoUrl+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;margin-bottom:12px;">'
+      : '';
     card.innerHTML =
+      photoHtml +
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
         '<h2 style="margin:0;">'+displayName+'</h2>' +
         (c.show_online ? '<span class="statusbadge"><span class="dot"></span> Online now</span>' : '') +
@@ -1306,18 +1315,37 @@ document.getElementById('suPass').addEventListener('input', e=>{ state.password 
 document.getElementById('suPass2').addEventListener('input', e=>{ state.password2 = e.target.value; updateNextState(); });
 document.getElementById('pName').addEventListener('input', e=>{ state.name = e.target.value; updateNextState(); });
 document.getElementById('pBio').addEventListener('input', e=>{ state.bio = e.target.value; updateNextState(); });
-document.querySelectorAll('.photoslot').forEach((el,i)=>{
-  el.addEventListener('click', ()=>{
-    if(el.textContent.trim()==='+'){
-      el.textContent = '📷';
-      state.photos++;
-    } else {
-      el.textContent = '+';
-      state.photos--;
-    }
-    updateNextState();
-  });
-});
+async function uploadPhoto(event, index){
+  const file = event.target.files[0];
+  if(!file) return;
+  const slot = document.getElementById('slot'+index);
+  slot.style.opacity = '0.5';
+
+  const path = state.userId + '/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+  const { error: upErr } = await sb.storage.from('photos').upload(path, file);
+  if(upErr){
+    document.getElementById('hint').textContent = 'Upload failed: ' + upErr.message;
+    slot.style.opacity = '1';
+    return;
+  }
+
+  const { data: pub } = sb.storage.from('photos').getPublicUrl(path);
+  const { error: dbErr } = await sb.from('photos').insert({ user_id: state.userId, url: pub.publicUrl, is_main: index===0 });
+  if(dbErr){
+    document.getElementById('hint').textContent = 'Save failed: ' + dbErr.message;
+    slot.style.opacity = '1';
+    return;
+  }
+
+  slot.style.backgroundImage = 'url(' + pub.publicUrl + ')';
+  slot.style.backgroundSize = 'cover';
+  slot.style.backgroundPosition = 'center';
+  slot.style.opacity = '1';
+  const plus = slot.querySelector('.plus');
+  if(plus) plus.style.display = 'none';
+  state.photos++;
+  updateNextState();
+}
 
 function toggleSwitch(id){
   const el = document.getElementById(id);
