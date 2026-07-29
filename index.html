@@ -678,10 +678,34 @@
 
     <!-- PAGE 8: Discovery -->
     <div class="page" data-page="8">
-      <h1>Discover</h1>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h1 style="margin:0;">Discover</h1>
+        <span class="modal-link" onclick="current=9;showPage(9);">Messages</span>
+      </div>
       <p class="sub">People near you, closest first.</p>
       <div class="hint" id="discoveryHint" style="margin-bottom:12px;"></div>
       <div id="discoveryCards"></div>
+    </div>
+
+    <!-- PAGE 9: Matches list -->
+    <div class="page" data-page="9">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h1 style="margin:0;">Messages</h1>
+        <span class="modal-link" onclick="current=8;showPage(8);">Discover</span>
+      </div>
+      <p class="sub">Your matches.</p>
+      <div id="matchesList"></div>
+    </div>
+
+    <!-- PAGE 10: Chat thread -->
+    <div class="page" data-page="10">
+      <h1 id="chatTitle" style="margin-bottom:6px;">Chat</h1>
+      <div id="chatMessages" style="margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <button class="nextbtn" style="width:auto;padding:12px 18px;flex-shrink:0;" onclick="sendMessage()">Send</button>
+      </div>
+      <div class="hint" id="chatHint"></div>
     </div>
 
   </div>
@@ -813,10 +837,12 @@ function showPage(n){
   document.getElementById('backBtn').classList.toggle('show', n>1);
   document.getElementById('nextBtn').textContent = NEXT_LABELS[n] || 'Continue';
   document.getElementById('hint').textContent = '';
-  document.querySelector('.footer').style.display = (n===8) ? 'none' : '';
+  document.querySelector('.footer').style.display = (n>=8) ? 'none' : '';
 
   if(n===7){ document.getElementById('progress').style.display='none'; renderReview(); }
   else if(n===8){ document.getElementById('progress').style.display='none'; loadDiscovery(); }
+  else if(n===9){ document.getElementById('progress').style.display='none'; loadMatches(); }
+  else if(n===10){ document.getElementById('progress').style.display='none'; loadChatThread(); }
   else { document.getElementById('progress').style.display='flex'; renderProgress(); }
   updateNextState();
 }
@@ -958,8 +984,79 @@ async function likeCandidate(id){
   const { data: mutual } = await sb.from('likes').select('id').eq('liker_id', id).eq('liked_id', state.userId).maybeSingle();
   const card = document.querySelector('[data-candidate="'+id+'"]');
   if(card) card.remove();
-  if(mutual){ document.getElementById('discoveryHint').textContent = "It's a match!"; }
+  if(mutual){
+    const pair = [state.userId, id].sort();
+    await sb.from('matches').upsert({ user_a: pair[0], user_b: pair[1] }, { onConflict: 'user_a,user_b' });
+    document.getElementById('discoveryHint').textContent = "It's a match! Check Messages to say hi.";
+  }
   checkEmpty();
+}
+
+async function loadMatches(){
+  const container = document.getElementById('matchesList');
+  container.innerHTML = '<div class="hint">Loading matches...</div>';
+  const { data: matches, error } = await sb.from('matches')
+    .select('id,user_a,user_b')
+    .or('user_a.eq.'+state.userId+',user_b.eq.'+state.userId);
+  if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
+  if(!matches.length){ container.innerHTML = '<div class="hint">No matches yet — go back to Discover and start liking people.</div>'; return; }
+
+  const otherIds = matches.map(m => m.user_a === state.userId ? m.user_b : m.user_a);
+  const { data: profiles } = await sb.from('profiles').select('id,name,display_name,gender').in('id', otherIds);
+  const profileMap = {};
+  (profiles||[]).forEach(p=>{ profileMap[p.id]=p; });
+
+  container.innerHTML = '';
+  matches.forEach(m=>{
+    const otherId = m.user_a === state.userId ? m.user_b : m.user_a;
+    const p = profileMap[otherId] || {};
+    const displayName = (p.display_name && p.name) ? p.name : 'Anonymous';
+    const row = document.createElement('div');
+    row.className = 'discover-card';
+    row.style.cursor = 'pointer';
+    row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><h2 style="margin:0;font-size:16px;">'+displayName+'</h2><span class="sub">'+(p.gender||'')+'</span></div>';
+    row.addEventListener('click', ()=> openChat(m.id, otherId));
+    container.appendChild(row);
+  });
+}
+
+function openChat(matchId, otherId){
+  state.activeMatchId = matchId;
+  state.activeMatchUser = otherId;
+  current = 10;
+  showPage(10);
+}
+
+async function loadChatThread(){
+  const titleEl = document.getElementById('chatTitle');
+  const { data: p } = await sb.from('profiles').select('name,display_name').eq('id', state.activeMatchUser).single();
+  titleEl.textContent = (p && p.display_name && p.name) ? p.name : 'Chat';
+  await refreshMessages();
+}
+
+async function refreshMessages(){
+  const container = document.getElementById('chatMessages');
+  const { data: messages, error } = await sb.from('messages')
+    .select('sender_id,body,created_at')
+    .eq('match_id', state.activeMatchId)
+    .order('created_at', { ascending: true });
+  if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
+  container.innerHTML = (messages||[]).map(m=>{
+    const mine = m.sender_id === state.userId;
+    return '<div style="text-align:'+(mine?'right':'left')+';margin-bottom:8px;">' +
+      '<span style="display:inline-block;padding:8px 12px;border-radius:12px;background:'+(mine?'var(--accent)':'var(--card2)')+';max-width:75%;font-size:13.5px;">'+m.body+'</span></div>';
+  }).join('') || '<div class="hint">Say hi.</div>';
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendMessage(){
+  const input = document.getElementById('chatInput');
+  const body = input.value.trim();
+  if(!body) return;
+  const { error } = await sb.from('messages').insert({ match_id: state.activeMatchId, sender_id: state.userId, body: body });
+  if(error){ document.getElementById('chatHint').textContent = error.message; return; }
+  input.value = '';
+  await refreshMessages();
 }
 
 function checkEmpty(){
