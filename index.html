@@ -797,10 +797,14 @@
       </div>
       <div id="chatMessages" style="margin-bottom:12px;"></div>
       <div style="display:flex;gap:8px;">
+        <label class="dbtn" style="width:44px;height:44px;font-size:18px;flex-shrink:0;" title="Send a self-destructing photo">
+          &#128247;
+          <input type="file" accept="image/*" style="display:none;" onchange="sendPhoto(event)">
+        </label>
         <input type="text" id="chatInput" placeholder="Type a message...">
         <button class="nextbtn" style="width:auto;padding:12px 18px;flex-shrink:0;" onclick="sendMessage()">Send</button>
       </div>
-      <div class="hint" id="chatHint"></div>
+      <div class="hint" id="chatHint">Photos disappear once opened.</div>
     </div>
 
     <!-- PAGE 12: Settings -->
@@ -1067,8 +1071,13 @@ function showPage(n){
   else if(n===11){ document.getElementById('progress').style.display='none'; loadChatThread(); }
   else if(n===12){ document.getElementById('progress').style.display='none'; loadSettings(); }
   else { document.getElementById('progress').style.display='flex'; renderProgress(); }
+
+  if(chatPollTimer){ clearInterval(chatPollTimer); chatPollTimer = null; }
+  if(n===11){ chatPollTimer = setInterval(refreshMessages, 4000); }
+
   updateNextState();
 }
+let chatPollTimer = null;
 
 async function doSignup(){
   const { data, error } = await sb.auth.signUp({ email: state.email, password: state.password });
@@ -1386,16 +1395,55 @@ async function loadChatThread(){
 async function refreshMessages(){
   const container = document.getElementById('chatMessages');
   const { data: messages, error } = await sb.from('messages')
-    .select('sender_id,body,created_at')
+    .select('id,sender_id,body,image_path,image_destroyed,created_at')
     .eq('match_id', state.activeMatchId)
     .order('created_at', { ascending: true });
   if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
   container.innerHTML = (messages||[]).map(m=>{
     const mine = m.sender_id === state.userId;
-    return '<div style="text-align:'+(mine?'right':'left')+';margin-bottom:8px;">' +
-      '<span style="display:inline-block;padding:8px 12px;border-radius:12px;background:'+(mine?'var(--accent)':'var(--card2)')+';max-width:75%;font-size:13.5px;">'+m.body+'</span></div>';
+    const bg = mine ? 'var(--accent)' : 'var(--card2)';
+    let inner;
+    if(m.image_path){
+      if(m.image_destroyed){
+        inner = '<span style="display:inline-block;padding:8px 12px;border-radius:12px;background:'+bg+';font-size:13px;opacity:.65;">&#128293; Photo — viewed &amp; gone</span>';
+      } else if(mine){
+        inner = '<span style="display:inline-block;padding:8px 12px;border-radius:12px;background:'+bg+';font-size:13px;">&#128247; Photo sent — disappears once opened</span>';
+      } else {
+        inner = '<span style="display:inline-block;padding:8px 12px;border-radius:12px;background:'+bg+';font-size:13px;cursor:pointer;" onclick="revealPhoto(\''+m.id+'\',\''+m.image_path+'\',this)">&#128274; Tap to view — disappears after opening</span>';
+      }
+    } else {
+      inner = '<span style="display:inline-block;padding:8px 12px;border-radius:12px;background:'+bg+';max-width:75%;font-size:13.5px;">'+m.body+'</span>';
+    }
+    return '<div style="text-align:'+(mine?'right':'left')+';margin-bottom:8px;">' + inner + '</div>';
   }).join('') || '<div class="hint">Say hi.</div>';
   container.scrollTop = container.scrollHeight;
+}
+
+async function revealPhoto(id, path, el){
+  el.style.pointerEvents = 'none';
+  el.textContent = 'Loading...';
+  const { data, error } = await sb.storage.from('chat-photos').createSignedUrl(path, 60);
+  if(error || !data){ el.textContent = 'Failed to load photo.'; el.style.pointerEvents = ''; return; }
+  await sb.from('messages').update({ image_viewed_at: new Date().toISOString(), image_destroyed: true }).eq('id', id);
+  const wrap = el.parentElement;
+  wrap.innerHTML = '<img src="'+data.signedUrl+'" style="max-width:220px;max-height:280px;border-radius:12px;display:block;margin-left:auto;object-fit:cover;">' +
+    '<div class="sub" style="font-size:10.5px;margin-top:4px;">This photo disappears in a few seconds.</div>';
+  setTimeout(refreshMessages, 6000);
+}
+
+async function sendPhoto(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  event.target.value = '';
+  const hint = document.getElementById('chatHint');
+  hint.textContent = 'Sending photo...';
+  const path = state.activeMatchId + '/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+  const { error: upErr } = await sb.storage.from('chat-photos').upload(path, file);
+  if(upErr){ hint.textContent = 'Photo failed: ' + upErr.message; return; }
+  const { error: msgErr } = await sb.from('messages').insert({ match_id: state.activeMatchId, sender_id: state.userId, body: '', image_path: path });
+  if(msgErr){ hint.textContent = 'Photo failed: ' + msgErr.message; return; }
+  hint.textContent = 'Photos disappear once opened.';
+  await refreshMessages();
 }
 
 async function sendMessage(){
