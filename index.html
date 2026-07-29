@@ -1117,19 +1117,50 @@ async function loadMatches(){
   if(!matches.length){ container.innerHTML = '<div class="hint">No matches yet — go back to Discover and start liking people.</div>'; return; }
 
   const otherIds = matches.map(m => m.user_a === state.userId ? m.user_b : m.user_a);
+  const matchIds = matches.map(m => m.id);
+
   const { data: profiles } = await sb.from('profiles').select('id,name,display_name,gender').in('id', otherIds);
+  const { data: photos } = await sb.from('photos').select('user_id,url').eq('is_main', true).in('user_id', otherIds);
+  const { data: recentMessages } = await sb.from('messages')
+    .select('match_id,body,sender_id,created_at')
+    .in('match_id', matchIds)
+    .order('created_at', { ascending: false });
+
   const profileMap = {};
   (profiles||[]).forEach(p=>{ profileMap[p.id]=p; });
+  const photoMap = {};
+  (photos||[]).forEach(p=>{ photoMap[p.user_id]=p.url; });
+  const lastMsgMap = {};
+  (recentMessages||[]).forEach(m=>{ if(!lastMsgMap[m.match_id]) lastMsgMap[m.match_id] = m; });
 
   container.innerHTML = '';
   matches.forEach(m=>{
     const otherId = m.user_a === state.userId ? m.user_b : m.user_a;
     const p = profileMap[otherId] || {};
     const displayName = (p.display_name && p.name) ? p.name : 'Anonymous';
+    const photoUrl = photoMap[otherId];
+    const lastMsg = lastMsgMap[m.id];
+    const preview = lastMsg ? ((lastMsg.sender_id === state.userId ? 'You: ' : '') + lastMsg.body) : 'Say hi 👋';
+
+    const avatarHtml = photoUrl
+      ? '<img src="'+photoUrl+'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;">'
+      : '<div style="width:52px;height:52px;border-radius:50%;background:var(--card2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted);">?</div>';
+
     const row = document.createElement('div');
     row.className = 'discover-card';
     row.style.cursor = 'pointer';
-    row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><h2 style="margin:0;font-size:16px;">'+displayName+'</h2><span class="sub">'+(p.gender||'')+'</span></div>';
+    row.style.display = 'flex';
+    row.style.gap = '12px';
+    row.style.alignItems = 'center';
+    row.innerHTML =
+      avatarHtml +
+      '<div style="min-width:0;flex:1;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<h2 style="margin:0;font-size:16px;">'+displayName+'</h2>' +
+          '<span class="sub" style="font-size:11px;">'+(p.gender||'')+'</span>' +
+        '</div>' +
+        '<div class="sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+preview+'</div>' +
+      '</div>';
     row.addEventListener('click', ()=> openChat(m.id, otherId));
     container.appendChild(row);
   });
