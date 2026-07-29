@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Melb Twenty — Onboarding Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0d0d10;
@@ -19,7 +22,7 @@
   *{box-sizing:border-box;}
   body{
     margin:0;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    font-family:'Nunito',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
     background:radial-gradient(circle at 50% 0%,#26141d 0%,var(--bg) 55%);
     color:var(--text);
     display:flex;
@@ -96,9 +99,11 @@
   .page.active{display:block;}
   @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
   h1{
-    font-size:24px;
+    font-family:'Baloo 2',sans-serif;
+    font-size:25px;
+    font-weight:700;
     margin:10px 0 4px;
-    letter-spacing:-.02em;
+    letter-spacing:-.01em;
   }
   .sub{
     color:var(--muted);
@@ -154,19 +159,21 @@
   }
   .chip{
     padding:9px 14px;
-    border-radius:999px;
+    border-radius:10px;
     background:var(--card2);
     border:1.5px solid var(--border);
     font-size:13px;
+    font-weight:700;
     cursor:pointer;
     user-select:none;
     transition:all .15s ease;
   }
   .chip.selected{
-    background:var(--accent);
+    background:rgba(255,61,104,.16);
     border-color:var(--accent);
-    color:#fff;
+    color:var(--text);
   }
+  .chip.selected::before{content:'✓ ';color:var(--accent);}
   .kink-tags{
     max-height:0;
     overflow:hidden;
@@ -492,6 +499,22 @@
     width:60px;height:60px;
     font-size:24px;
   }
+  .sidesplit{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .sidecard{
+    border-radius:20px;
+    padding:26px 12px;
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+    border:1.5px solid var(--border);
+    transition:all .15s ease;
+  }
+  .sidecard-north{background:linear-gradient(160deg,#2f5d82,#16293b);}
+  .sidecard-south{background:linear-gradient(160deg,#c9622f,#5c2c17);}
+  .sideemoji{font-size:32px;margin-bottom:8px;}
+  .sidename{font-family:'Baloo 2',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px;}
+  .sidetag{font-size:10.5px;color:rgba(255,255,255,.75);}
+  .sidecard.selected{border-color:#fff;box-shadow:0 0 0 2px var(--accent);transform:translateY(-2px);}
 </style>
 </head>
 <body>
@@ -559,15 +582,22 @@
 
     <!-- PAGE 2: Side -->
     <div class="page" data-page="2">
-      <h1>Where are you?</h1>
-      <p class="sub">This sets your default area so matches make sense from day one.</p>
+      <h1>Team North or Team South?</h1>
+      <p class="sub">Melbourne's oldest rivalry. Pick a side of the river — you can browse both later.</p>
       <div class="qgroup">
-        <div class="qlabel">Side of town</div>
-        <div class="options" id="q1">
-          <div class="opt" data-val="North side">North side</div>
-          <div class="opt" data-val="South side">South side</div>
-          <div class="opt" data-val="Both">Both</div>
+        <div class="sidesplit" id="q1">
+          <div class="sidecard sidecard-north" data-val="North side">
+            <div class="sideemoji">🌉</div>
+            <div class="sidename">North side</div>
+            <div class="sidetag">Brunswick, Northcote, Preston...</div>
+          </div>
+          <div class="sidecard sidecard-south" data-val="South side">
+            <div class="sideemoji">🏖️</div>
+            <div class="sidename">South side</div>
+            <div class="sidetag">St Kilda, Prahran, Brighton...</div>
+          </div>
         </div>
+        <div class="opt" data-val="Both" id="q1both">🤝 Both — I go anywhere</div>
       </div>
     </div>
 
@@ -698,12 +728,12 @@
       </div>
 
       <div class="qgroup">
-        <div class="qlabel">Bio <span class="required">*</span></div>
+        <div class="qlabel">Bio <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional)</span></div>
         <textarea id="pBio" placeholder="Tell people a bit about you..."></textarea>
       </div>
 
       <div class="qgroup">
-        <div class="qlabel">Photos <span class="required">*</span> <span style="font-weight:400;text-transform:none;color:var(--muted)">(min. 1)</span></div>
+        <div class="qlabel">Photos <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional)</span></div>
         <div class="photogrid" id="photoGrid">
           <label class="photoslot main" id="slot0"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,0)"></label>
           <label class="photoslot" id="slot1"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,1)"></label>
@@ -728,17 +758,6 @@
         </div>
       </div>
 
-      <div class="qgroup">
-        <div class="toggle-row">
-          <div class="lbl">Show online status<small>"Online now" badge visible to others</small></div>
-          <div class="switch on" id="toggleOnline" onclick="toggleSwitch('toggleOnline')"></div>
-        </div>
-        <div class="toggle-row">
-          <div class="lbl">Show last seen<small>"Active 3h ago" shown when offline</small></div>
-          <div class="switch on" id="toggleLastSeen" onclick="toggleSwitch('toggleLastSeen')"></div>
-        </div>
-        <div class="statusbadge"><span class="dot"></span> Preview: Online now</div>
-      </div>
     </div>
 
     <!-- PAGE 7: Review -->
@@ -946,7 +965,7 @@ const state = {
   style:null, kinkTags:[], structure:null,
   genders:[], ageMin:22, ageMax:40, radius:10,
   name:'', showName:true, age:null, showAge:true, gender:null, bio:'', photos:0,
-  interests:[], showOnline:true, showLastSeen:true,
+  interests:[],
   lat:null, lng:null
 };
 
@@ -1071,8 +1090,7 @@ async function doSaveProfile(){
   if(!state.userId){ document.getElementById('hint').textContent = 'No account found — please restart signup.'; return false; }
   const { error: e1 } = await sb.from('profiles').upsert({
     id: state.userId, name: state.name, display_name: state.showName, age: state.age, show_age: state.showAge,
-    gender: state.gender, bio: state.bio, interests: state.interests, show_online: state.showOnline,
-    show_last_seen: state.showLastSeen, lat: state.lat, lng: state.lng
+    gender: state.gender, bio: state.bio, interests: state.interests, lat: state.lat, lng: state.lng
   });
   const { error: e2 } = await sb.from('preferences').upsert({
     user_id: state.userId, side: state.side, orientation: state.orientation, intent: state.intent,
@@ -1119,6 +1137,7 @@ function goBack(){
 }
 
 const GENDER_MAP = { Women:'Woman', Men:'Man', Nonbinary:'Nonbinary' };
+const CBD_LAT = -37.8136, CBD_LNG = 144.9631; // Melbourne CBD — radius is measured from here, not from you
 
 async function loadDiscovery(){
   const container = document.getElementById('discoveryCards');
@@ -1160,8 +1179,8 @@ async function loadDiscovery(){
   const filtered = candidates
     .filter(c => !excludeIds.has(c.id))
     .filter(c => c.lat!=null && c.lng!=null)
-    .map(c => ({...c, _distance: distanceKm(myProfile.lat, myProfile.lng, c.lat, c.lng)}))
-    .filter(c => c._distance <= (mySettings.radius_km || 9999))
+    .map(c => ({...c, _distance: distanceKm(myProfile.lat, myProfile.lng, c.lat, c.lng), _fromCbd: distanceKm(CBD_LAT, CBD_LNG, c.lat, c.lng)}))
+    .filter(c => c._fromCbd <= (mySettings.radius_km || 20))
     .filter(c => wantsEveryone || wantedSingular.includes(c.gender))
     .sort((a,b) => a._distance - b._distance);
 
@@ -1187,7 +1206,7 @@ async function loadDiscovery(){
     const headingText = nameAgeParts.length ? nameAgeParts.join(', ') : 'Nearby match';
     const statusText = lastSeenText(c.last_active);
     const isOnline = statusText === 'Online now';
-    const chips = (c.interests||[]).map(i=>'<span class="chip selected" style="cursor:default">'+i+'</span>').join('');
+    const chips = (c.interests||[]).map(i=>'<span class="chip" style="cursor:default">'+i+'</span>').join('');
     const photoUrl = photoMap[c.id];
     const photoHtml = photoUrl
       ? '<img src="'+photoUrl+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;margin-bottom:12px;">'
@@ -1449,7 +1468,14 @@ function selectMulti(groupId, key, chipClass){
   });
 }
 
-selectSingle('q1','side');
+document.querySelectorAll('#q1 .sidecard, #q1 .opt').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('#q1 .sidecard, #q1 .opt').forEach(o=>o.classList.remove('selected'));
+    el.classList.add('selected');
+    state.side = el.dataset.val;
+    updateNextState();
+  });
+});
 selectSingle('q2a','orientation');
 selectSingle('q2b','intent');
 selectSingle('q3a','style');
@@ -1535,7 +1561,7 @@ async function uploadPhoto(event, index){
 function toggleSwitch(id){
   const el = document.getElementById(id);
   el.classList.toggle('on');
-  const map = {toggleNameShow:'showName', toggleAgeShow:'showAge', toggleOnline:'showOnline', toggleLastSeen:'showLastSeen'};
+  const map = {toggleNameShow:'showName', toggleAgeShow:'showAge'};
   state[map[id]] = el.classList.contains('on');
 }
 
@@ -1579,8 +1605,8 @@ function validate(page){
     }
   }
   if(page===6){
-    if(!state.name || !state.age || !state.gender || !state.bio || state.photos<1){
-      document.getElementById('hint').textContent = 'Fill required fields: name, age, gender, bio, and at least 1 photo.';
+    if(!state.name || !state.age || !state.gender){
+      document.getElementById('hint').textContent = 'Fill required fields: name, age, and gender.';
       return false;
     }
   }
@@ -1609,8 +1635,6 @@ function renderReview(){
     ['Gender', state.gender],
     ['Photos', state.photos + ' uploaded'],
     ['Interests', state.interests.join(', ') || '—'],
-    ['Online status', state.showOnline ? 'Visible — "Online now"' : 'Hidden'],
-    ['Last seen', state.showLastSeen ? 'Visible — "Active 3h ago"' : 'Hidden'],
   ];
   const card = document.getElementById('reviewCard');
   card.innerHTML = rows.map(r=>
