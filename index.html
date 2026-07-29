@@ -734,7 +734,12 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+const SUPABASE_URL = 'https://mihyszbnatxleyrbltqc.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_a81SaMoE_wyTEnC96Z2z1Q_oRXSTIB7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const totalPages = 7;
 let current = 1;
 const state = {
@@ -777,8 +782,58 @@ function showPage(n){
   updateNextState();
 }
 
-function goNext(){
+async function doSignup(){
+  const { data, error } = await sb.auth.signUp({ email: state.email, password: state.password });
+  if(error){ document.getElementById('hint').textContent = error.message; return false; }
+  state.userId = (data.user && data.user.id) || (data.session && data.session.user.id) || null;
+  if(!state.userId){
+    document.getElementById('hint').textContent = 'Check your email to confirm your account, then come back and continue.';
+    return false;
+  }
+  const { error: profErr } = await sb.from('profiles').upsert({
+    id: state.userId, age_confirmed: state.ageConfirmed, agreed_terms: state.agreedTerms
+  });
+  if(profErr){ document.getElementById('hint').textContent = 'Account created, but saving failed: ' + profErr.message; return false; }
+  return true;
+}
+
+async function doSaveProfile(){
+  if(!state.userId){ document.getElementById('hint').textContent = 'No account found — please restart signup.'; return false; }
+  const { error: e1 } = await sb.from('profiles').upsert({
+    id: state.userId, name: state.name, display_name: state.showName, gender: state.gender,
+    bio: state.bio, interests: state.interests, show_online: state.showOnline, show_last_seen: state.showLastSeen
+  });
+  const { error: e2 } = await sb.from('preferences').upsert({
+    user_id: state.userId, side: state.side, orientation: state.orientation, intent: state.intent,
+    style: state.style, kink_tags: state.kinkTags, structure: state.structure
+  });
+  const { error: e3 } = await sb.from('search_settings').upsert({
+    user_id: state.userId, genders: state.genders, age_min: state.ageMin, age_max: state.ageMax, radius_km: state.radius
+  });
+  const err = e1 || e2 || e3;
+  if(err){ document.getElementById('hint').textContent = 'Save failed: ' + err.message; return false; }
+  return true;
+}
+
+async function goNext(){
   if(!validate(current)) return;
+  const btn = document.getElementById('nextBtn');
+  const originalText = btn.textContent;
+
+  if(current === 1){
+    btn.disabled = true; btn.textContent = 'Creating account...';
+    const ok = await doSignup();
+    btn.disabled = false; btn.textContent = originalText;
+    if(!ok) return;
+  }
+
+  if(current === 6){
+    btn.disabled = true; btn.textContent = 'Saving...';
+    const ok = await doSaveProfile();
+    btn.disabled = false; btn.textContent = originalText;
+    if(!ok) return;
+  }
+
   if(current < totalPages){ current++; showPage(current); }
   else { document.getElementById('hint').textContent = 'Mockup complete — this would hand off to the main app.'; }
 }
