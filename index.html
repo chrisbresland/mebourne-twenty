@@ -316,6 +316,13 @@
     padding:16px;
     margin-top:6px;
   }
+  .discover-card{
+    background:var(--card2);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:14px;
+  }
   .prow{
     display:flex;
     justify-content:space-between;
@@ -669,6 +676,14 @@
       <div class="previewcard" id="reviewCard"></div>
     </div>
 
+    <!-- PAGE 8: Discovery -->
+    <div class="page" data-page="8">
+      <h1>Discover</h1>
+      <p class="sub">People near you, closest first.</p>
+      <div class="hint" id="discoveryHint" style="margin-bottom:12px;"></div>
+      <div id="discoveryCards"></div>
+    </div>
+
   </div>
 
   <div class="footer">
@@ -740,7 +755,8 @@ const SUPABASE_URL = 'https://mihyszbnatxleyrbltqc.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_a81SaMoE_wyTEnC96Z2z1Q_oRXSTIB7';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const totalPages = 7;
+const totalPages = 8;
+const ONBOARDING_STEPS = 6;
 let current = 1;
 const state = {
   email:'', password:'', ageConfirmed:false, agreedTerms:false,
@@ -748,13 +764,31 @@ const state = {
   style:null, kinkTags:[], structure:null,
   genders:[], ageMin:22, ageMax:40, radius:15,
   name:'', showName:true, gender:null, bio:'', photos:0,
-  interests:[], showOnline:true, showLastSeen:true
+  interests:[], showOnline:true, showLastSeen:true,
+  lat:null, lng:null
 };
+
+function distanceKm(lat1, lon1, lat2, lon2){
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R*c;
+}
+
+function requestLocation(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos => { state.lat = pos.coords.latitude; state.lng = pos.coords.longitude; },
+    err => { console.log('location not available:', err.message); }
+  );
+}
 
 function buildProgress(){
   const p = document.getElementById('progress');
   p.innerHTML = '';
-  for(let i=1;i<=totalPages-1;i++){
+  for(let i=1;i<=ONBOARDING_STEPS;i++){
     const seg = document.createElement('div');
     seg.className='seg';
     seg.innerHTML = '<i id="seg'+i+'"></i>';
@@ -764,20 +798,25 @@ function buildProgress(){
 buildProgress();
 
 function renderProgress(){
-  for(let i=1;i<totalPages;i++){
+  for(let i=1;i<=ONBOARDING_STEPS;i++){
     const bar = document.getElementById('seg'+i);
     if(!bar) continue;
     bar.style.width = i < current ? '100%' : (i===current ? '100%' : '0%');
   }
 }
 
+const NEXT_LABELS = {6:'Finish', 7:'Enter the app'};
+
 function showPage(n){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelector('.page[data-page="'+n+'"]').classList.add('active');
   document.getElementById('backBtn').classList.toggle('show', n>1);
-  document.getElementById('nextBtn').textContent = n===totalPages ? 'Enter the app' : (n===totalPages-1 ? 'Finish' : 'Continue');
+  document.getElementById('nextBtn').textContent = NEXT_LABELS[n] || 'Continue';
   document.getElementById('hint').textContent = '';
-  if(n===totalPages){ document.getElementById('progress').style.display='none'; renderReview(); }
+  document.querySelector('.footer').style.display = (n===8) ? 'none' : '';
+
+  if(n===7){ document.getElementById('progress').style.display='none'; renderReview(); }
+  else if(n===8){ document.getElementById('progress').style.display='none'; loadDiscovery(); }
   else { document.getElementById('progress').style.display='flex'; renderProgress(); }
   updateNextState();
 }
@@ -794,6 +833,7 @@ async function doSignup(){
     id: state.userId, age_confirmed: state.ageConfirmed, agreed_terms: state.agreedTerms
   });
   if(profErr){ document.getElementById('hint').textContent = 'Account created, but saving failed: ' + profErr.message; return false; }
+  requestLocation();
   return true;
 }
 
@@ -801,7 +841,8 @@ async function doSaveProfile(){
   if(!state.userId){ document.getElementById('hint').textContent = 'No account found — please restart signup.'; return false; }
   const { error: e1 } = await sb.from('profiles').upsert({
     id: state.userId, name: state.name, display_name: state.showName, gender: state.gender,
-    bio: state.bio, interests: state.interests, show_online: state.showOnline, show_last_seen: state.showLastSeen
+    bio: state.bio, interests: state.interests, show_online: state.showOnline, show_last_seen: state.showLastSeen,
+    lat: state.lat, lng: state.lng
   });
   const { error: e2 } = await sb.from('preferences').upsert({
     user_id: state.userId, side: state.side, orientation: state.orientation, intent: state.intent,
@@ -839,6 +880,93 @@ async function goNext(){
 }
 function goBack(){
   if(current>1){ current--; showPage(current); }
+}
+
+const GENDER_MAP = { Women:'Woman', Men:'Man', Nonbinary:'Nonbinary' };
+
+async function loadDiscovery(){
+  const container = document.getElementById('discoveryCards');
+  const hint = document.getElementById('discoveryHint');
+  hint.textContent = '';
+  container.innerHTML = '<div class="hint">Finding people near you...</div>';
+
+  const { data: myProfile } = await sb.from('profiles').select('lat,lng').eq('id', state.userId).single();
+  const { data: mySettings } = await sb.from('search_settings').select('*').eq('user_id', state.userId).single();
+
+  if(!myProfile || myProfile.lat==null || myProfile.lng==null){
+    container.innerHTML = '<div class="hint">We couldn\'t get your location. Check location permissions for this site and reload.</div>';
+    return;
+  }
+  if(!mySettings){
+    container.innerHTML = '<div class="hint">Missing search settings — go back and finish onboarding.</div>';
+    return;
+  }
+
+  const { data: candidates, error } = await sb.from('profiles')
+    .select('id,name,display_name,gender,bio,interests,show_online,lat,lng')
+    .neq('id', state.userId);
+
+  if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
+
+  const wanted = (mySettings.genders && mySettings.genders.length) ? mySettings.genders : ['Everyone'];
+  const wantedSingular = wanted.map(g => GENDER_MAP[g] || g);
+  const wantsEveryone = wanted.includes('Everyone');
+
+  const filtered = candidates
+    .filter(c => c.lat!=null && c.lng!=null)
+    .map(c => ({...c, _distance: distanceKm(myProfile.lat, myProfile.lng, c.lat, c.lng)}))
+    .filter(c => c._distance <= (mySettings.radius_km || 9999))
+    .filter(c => wantsEveryone || wantedSingular.includes(c.gender))
+    .sort((a,b) => a._distance - b._distance);
+
+  container.innerHTML = '';
+  if(!filtered.length){
+    container.innerHTML = '<div class="hint">No one nearby matches your filters yet. Try widening your radius or gender filter in Settings.</div>';
+    return;
+  }
+
+  filtered.forEach(c=>{
+    const card = document.createElement('div');
+    card.className = 'discover-card';
+    card.dataset.candidate = c.id;
+    const displayName = (c.display_name && c.name) ? c.name : 'Anonymous';
+    const chips = (c.interests||[]).map(i=>'<span class="chip selected" style="cursor:default">'+i+'</span>').join('');
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<h2 style="margin:0;">'+displayName+'</h2>' +
+        (c.show_online ? '<span class="statusbadge"><span class="dot"></span> Online now</span>' : '') +
+      '</div>' +
+      '<div class="sub" style="margin:4px 0 12px;">'+(c.gender||'')+' · '+c._distance.toFixed(1)+' km away</div>' +
+      '<p class="sub" style="margin-bottom:12px;">'+(c.bio||'No bio yet.')+'</p>' +
+      '<div class="chips" style="margin-bottom:14px;">'+chips+'</div>' +
+      '<div style="display:flex;gap:10px;">' +
+        '<button class="nextbtn" style="background:var(--card2);flex:1;" onclick="passCandidate(\''+c.id+'\')">Pass</button>' +
+        '<button class="nextbtn" style="flex:1;" onclick="likeCandidate(\''+c.id+'\')">Like</button>' +
+      '</div>';
+    container.appendChild(card);
+  });
+}
+
+function passCandidate(id){
+  const card = document.querySelector('[data-candidate="'+id+'"]');
+  if(card) card.remove();
+  checkEmpty();
+}
+
+async function likeCandidate(id){
+  await sb.from('likes').insert({ liker_id: state.userId, liked_id: id });
+  const { data: mutual } = await sb.from('likes').select('id').eq('liker_id', id).eq('liked_id', state.userId).maybeSingle();
+  const card = document.querySelector('[data-candidate="'+id+'"]');
+  if(card) card.remove();
+  if(mutual){ document.getElementById('discoveryHint').textContent = "It's a match!"; }
+  checkEmpty();
+}
+
+function checkEmpty(){
+  const container = document.getElementById('discoveryCards');
+  if(!container.querySelector('.discover-card')){
+    container.innerHTML = '<div class="hint">That\'s everyone nearby for now — check back later.</div>';
+  }
 }
 
 function selectSingle(groupId, key){
