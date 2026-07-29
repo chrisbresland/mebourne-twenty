@@ -177,7 +177,7 @@
     max-height:300px;
     margin-top:14px;
   }
-  input[type=text], textarea{
+  input[type=text], input[type=password], textarea{
     width:100%;
     background:var(--card2);
     border:1.5px solid var(--border);
@@ -454,6 +454,44 @@
     font-size:14px;
     font-family:inherit;
   }
+  .pw-row{display:flex;gap:8px;align-items:stretch;}
+  .pw-row input{flex:1;min-width:0;}
+  .pw-toggle{
+    flex-shrink:0;
+    background:var(--card2);
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+    padding:0 14px;
+    cursor:pointer;
+  }
+  .pw-toggle:active{opacity:.7;}
+  .optgrid{display:grid;grid-template-columns:1fr 1fr;}
+  .optgrid.options{gap:10px;}
+  .dcard-actions{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:4px;}
+  .dbtn{
+    width:52px;height:52px;
+    border-radius:50%;
+    border:1.5px solid var(--border);
+    background:var(--card2);
+    font-size:20px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .1s ease;
+    color:var(--text);
+  }
+  .dbtn:active{transform:scale(.92);}
+  .dbtn-x{color:#ff6b81;}
+  .dbtn-skip{color:var(--muted);font-size:22px;}
+  .dbtn-like{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border-color:transparent;
+    color:#fff;
+    width:60px;height:60px;
+    font-size:24px;
+  }
 </style>
 </head>
 <body>
@@ -477,7 +515,7 @@
           </svg>
         </div>
         <h1 style="margin-bottom:2px;">Melb Twenty</h1>
-        <p class="sub" style="margin-bottom:0;">Sign up to get started.</p>
+        <p class="sub" id="authSub" style="margin-bottom:0;">Sign up to get started.</p>
       </div>
       <div class="qgroup">
         <div class="qlabel">Email <span class="required">*</span></div>
@@ -485,24 +523,32 @@
       </div>
       <div class="qgroup">
         <div class="qlabel">Password <span class="required">*</span></div>
-        <input type="text" id="suPass" placeholder="Create a password">
+        <div class="pw-row">
+          <input type="password" id="suPass" placeholder="Create a password">
+          <button type="button" class="pw-toggle" id="suPassToggle" onclick="togglePw('suPass')">Show</button>
+        </div>
       </div>
-      <div class="qgroup">
+      <div class="qgroup" id="pwConfirmGroup">
         <div class="qlabel">Confirm password <span class="required">*</span></div>
-        <input type="text" id="suPass2" placeholder="Re-enter password">
+        <div class="pw-row">
+          <input type="password" id="suPass2" placeholder="Re-enter password">
+          <button type="button" class="pw-toggle" id="suPass2Toggle" onclick="togglePw('suPass2')">Show</button>
+        </div>
       </div>
       <div class="hint" style="margin-top:2px;margin-bottom:16px;">No Google / Apple sign-in — email only, so we don't get stuck on OAuth again.</div>
 
-      <label class="checkbox-row">
-        <input type="checkbox" id="cbAge">
-        <span>I confirm I'm 18 years or older <span class="required">*</span></span>
-      </label>
-      <label class="checkbox-row">
-        <input type="checkbox" id="cbTerms">
-        <span>I agree to the <span class="modal-link" data-modal="modalTerms">Terms of Service</span> and <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> <span class="required">*</span></span>
-      </label>
+      <div id="ageTermsWrap">
+        <label class="checkbox-row">
+          <input type="checkbox" id="cbAge">
+          <span>I confirm I'm 18 years or older <span class="required">*</span></span>
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="cbTerms">
+          <span>I agree to the <span class="modal-link" data-modal="modalTerms">Terms of Service</span> and <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> <span class="required">*</span></span>
+        </label>
+      </div>
 
-      <div class="hint" style="margin-top:10px;">Already have an account? <span style="color:var(--text);text-decoration:underline;cursor:pointer;" onclick="doLogin()">Log in</span></div>
+      <div class="hint" id="authSwitchLine" style="margin-top:10px;">Already have an account? <span style="color:var(--text);text-decoration:underline;cursor:pointer;" onclick="setAuthMode('login')">Log in</span></div>
 
       <div class="footlinks">
         <span class="modal-link" data-modal="modalTerms">Terms</span> &nbsp;·&nbsp;
@@ -591,11 +637,11 @@
 
       <div class="qgroup">
         <div class="qlabel">Genders you want to see</div>
-        <div class="chips" id="q4-genders">
-          <div class="chip" data-val="Women">Women</div>
-          <div class="chip" data-val="Men">Men</div>
-          <div class="chip" data-val="Nonbinary">Nonbinary</div>
-          <div class="chip" data-val="Everyone">Everyone</div>
+        <div class="options optgrid" id="q4-genders">
+          <div class="opt" data-val="Women">Women</div>
+          <div class="opt" data-val="Men">Men</div>
+          <div class="opt" data-val="Nonbinary">Nonbinary</div>
+          <div class="opt" data-val="Everyone">Everyone</div>
         </div>
       </div>
 
@@ -603,16 +649,16 @@
         <div class="qlabel">Age range</div>
         <div class="slider-block">
           <div class="slider-val" id="ageVal">22 – 40</div>
-          <input type="range" id="ageMin" min="18" max="70" value="22" oninput="updateAge()">
-          <input type="range" id="ageMax" min="18" max="70" value="40" oninput="updateAge()">
+          <input type="range" id="ageMin" min="18" max="99" value="22" oninput="updateAge()">
+          <input type="range" id="ageMax" min="18" max="99" value="40" oninput="updateAge()">
         </div>
       </div>
 
       <div class="qgroup">
         <div class="qlabel">Radius</div>
         <div class="slider-block">
-          <div class="slider-val" id="radiusVal">15 miles</div>
-          <input type="range" id="radius" min="1" max="100" value="15" oninput="updateRadius()">
+          <div class="slider-val" id="radiusVal">10 km</div>
+          <input type="range" id="radius" min="1" max="20" value="10" oninput="updateRadius()">
         </div>
       </div>
       <div class="statusbadge"><span class="dot"></span> These filters live in Settings → Search, editable anytime</div>
@@ -633,12 +679,21 @@
       </div>
 
       <div class="qgroup">
+        <div class="qlabel">Age <span class="required">*</span></div>
+        <input type="text" inputmode="numeric" id="pAge" placeholder="Your age">
+        <div class="toggle-row">
+          <div class="lbl">Display age on profile<small>Off hides your age from others</small></div>
+          <div class="switch on" id="toggleAgeShow" onclick="toggleSwitch('toggleAgeShow')"></div>
+        </div>
+      </div>
+
+      <div class="qgroup">
         <div class="qlabel">Gender <span class="required">*</span></div>
-        <div class="chips" id="q5-gender">
-          <div class="chip" data-val="Woman">Woman</div>
-          <div class="chip" data-val="Man">Man</div>
-          <div class="chip" data-val="Nonbinary">Nonbinary</div>
-          <div class="chip" data-val="Other">Other</div>
+        <div class="options optgrid" id="q5-gender">
+          <div class="opt" data-val="Woman">Woman</div>
+          <div class="opt" data-val="Man">Man</div>
+          <div class="opt" data-val="Nonbinary">Nonbinary</div>
+          <div class="opt" data-val="Other">Other</div>
         </div>
       </div>
 
@@ -704,13 +759,6 @@
       <div id="discoveryCards"></div>
     </div>
 
-    <!-- PAGE 9: Likes -->
-    <div class="page" data-page="9">
-      <h1 style="margin:0;">Likes</h1>
-      <p class="sub">Everyone you've liked.</p>
-      <div id="likesList"></div>
-    </div>
-
     <!-- PAGE 10: Matches -->
     <div class="page" data-page="10">
       <h1 style="margin:0;">Matches</h1>
@@ -742,25 +790,29 @@
 
       <div class="qgroup">
         <div class="qlabel">Genders you want to see</div>
-        <div class="chips" id="setGenders">
-          <div class="chip" data-val="Women">Women</div>
-          <div class="chip" data-val="Men">Men</div>
-          <div class="chip" data-val="Nonbinary">Nonbinary</div>
-          <div class="chip" data-val="Everyone">Everyone</div>
+        <div class="options optgrid" id="setGenders">
+          <div class="opt" data-val="Women">Women</div>
+          <div class="opt" data-val="Men">Men</div>
+          <div class="opt" data-val="Nonbinary">Nonbinary</div>
+          <div class="opt" data-val="Everyone">Everyone</div>
         </div>
       </div>
 
       <div class="qgroup">
         <div class="qlabel">Age range</div>
-        <div style="display:flex;gap:10px;">
-          <input type="text" id="setAgeMin" placeholder="Min age" style="flex:1;">
-          <input type="text" id="setAgeMax" placeholder="Max age" style="flex:1;">
+        <div class="slider-block">
+          <div class="slider-val" id="setAgeVal">18 – 99</div>
+          <input type="range" id="setAgeMin" min="18" max="99" value="18" oninput="updateSetAge()">
+          <input type="range" id="setAgeMax" min="18" max="99" value="99" oninput="updateSetAge()">
         </div>
       </div>
 
       <div class="qgroup">
-        <div class="qlabel">Radius (km)</div>
-        <input type="text" id="setRadius" placeholder="Radius in km">
+        <div class="qlabel">Radius</div>
+        <div class="slider-block">
+          <div class="slider-val" id="setRadiusVal">20 km</div>
+          <input type="range" id="setRadius" min="1" max="20" value="20" oninput="updateSetRadius()">
+        </div>
       </div>
 
       <button class="nextbtn" onclick="saveSettings()">Save settings</button>
@@ -780,7 +832,6 @@
 
   <div class="appnav" id="appnav">
     <div class="navitem" data-nav="8" onclick="navTo(8)">Discover</div>
-    <div class="navitem" data-nav="9" onclick="navTo(9)">Likes</div>
     <div class="navitem" data-nav="10" onclick="navTo(10)">Matches</div>
     <div class="navitem" data-nav="12" onclick="navTo(12)">Settings</div>
   </div>
@@ -889,11 +940,12 @@ const totalPages = 8;
 const ONBOARDING_STEPS = 6;
 let current = 1;
 const state = {
+  authMode:'signup',
   email:'', password:'', ageConfirmed:false, agreedTerms:false,
   side:null, orientation:null, intent:null,
   style:null, kinkTags:[], structure:null,
-  genders:[], ageMin:22, ageMax:40, radius:15,
-  name:'', showName:true, gender:null, bio:'', photos:0,
+  genders:[], ageMin:22, ageMax:40, radius:10,
+  name:'', showName:true, age:null, showAge:true, gender:null, bio:'', photos:0,
   interests:[], showOnline:true, showLastSeen:true,
   lat:null, lng:null
 };
@@ -905,6 +957,38 @@ function distanceKm(lat1, lon1, lat2, lon2){
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R*c;
+}
+
+function lastSeenText(lastActive){
+  if(!lastActive) return 'Active recently';
+  const diffMs = Date.now() - new Date(lastActive).getTime();
+  const mins = diffMs / 60000;
+  if(mins < 15) return 'Online now';
+  const days = Math.floor(diffMs / 86400000);
+  if(days <= 0) return 'Active today';
+  if(days === 1) return 'Active yesterday';
+  return 'Active ' + days + ' days ago';
+}
+
+function togglePw(id){
+  const input = document.getElementById(id);
+  const btn = document.getElementById(id+'Toggle');
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.textContent = show ? 'Hide' : 'Show';
+}
+
+function setAuthMode(mode){
+  state.authMode = mode;
+  const login = mode === 'login';
+  document.getElementById('pwConfirmGroup').style.display = login ? 'none' : '';
+  document.getElementById('ageTermsWrap').style.display = login ? 'none' : '';
+  document.getElementById('authSub').textContent = login ? 'Log in to continue.' : 'Sign up to get started.';
+  document.getElementById('authSwitchLine').innerHTML = login
+    ? 'New here? <span style="color:var(--text);text-decoration:underline;cursor:pointer;" onclick="setAuthMode(\'signup\')">Create an account</span>'
+    : 'Already have an account? <span style="color:var(--text);text-decoration:underline;cursor:pointer;" onclick="setAuthMode(\'login\')">Log in</span>';
+  document.getElementById('nextBtn').textContent = login ? 'Log in' : 'Continue';
+  document.getElementById('hint').textContent = '';
 }
 
 function requestLocation(){
@@ -937,7 +1021,7 @@ function renderProgress(){
 
 const NEXT_LABELS = {6:'Finish', 7:'Enter the app'};
 
-const NAV_TAB_MAP = {8:8, 9:9, 10:10, 11:10, 12:12};
+const NAV_TAB_MAP = {8:8, 10:10, 11:10, 12:12};
 
 function navTo(n){
   current = n;
@@ -960,7 +1044,6 @@ function showPage(n){
 
   if(n===7){ document.getElementById('progress').style.display='none'; renderReview(); }
   else if(n===8){ document.getElementById('progress').style.display='none'; loadDiscovery(); }
-  else if(n===9){ document.getElementById('progress').style.display='none'; loadLikes(); }
   else if(n===10){ document.getElementById('progress').style.display='none'; loadMatches(); }
   else if(n===11){ document.getElementById('progress').style.display='none'; loadChatThread(); }
   else if(n===12){ document.getElementById('progress').style.display='none'; loadSettings(); }
@@ -987,9 +1070,9 @@ async function doSignup(){
 async function doSaveProfile(){
   if(!state.userId){ document.getElementById('hint').textContent = 'No account found — please restart signup.'; return false; }
   const { error: e1 } = await sb.from('profiles').upsert({
-    id: state.userId, name: state.name, display_name: state.showName, gender: state.gender,
-    bio: state.bio, interests: state.interests, show_online: state.showOnline, show_last_seen: state.showLastSeen,
-    lat: state.lat, lng: state.lng
+    id: state.userId, name: state.name, display_name: state.showName, age: state.age, show_age: state.showAge,
+    gender: state.gender, bio: state.bio, interests: state.interests, show_online: state.showOnline,
+    show_last_seen: state.showLastSeen, lat: state.lat, lng: state.lng
   });
   const { error: e2 } = await sb.from('preferences').upsert({
     user_id: state.userId, side: state.side, orientation: state.orientation, intent: state.intent,
@@ -1009,6 +1092,12 @@ async function goNext(){
   const originalText = btn.textContent;
 
   if(current === 1){
+    if(state.authMode === 'login'){
+      btn.disabled = true; btn.textContent = 'Logging in...';
+      await doLogin();
+      btn.disabled = false; btn.textContent = originalText;
+      return;
+    }
     btn.disabled = true; btn.textContent = 'Creating account...';
     const ok = await doSignup();
     btn.disabled = false; btn.textContent = originalText;
@@ -1050,7 +1139,7 @@ async function loadDiscovery(){
   }
 
   const { data: candidates, error } = await sb.from('profiles')
-    .select('id,name,display_name,gender,bio,interests,show_online,lat,lng')
+    .select('id,name,display_name,gender,bio,interests,age,show_age,last_active,lat,lng')
     .neq('id', state.userId);
 
   if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
@@ -1090,7 +1179,14 @@ async function loadDiscovery(){
     const card = document.createElement('div');
     card.className = 'discover-card';
     card.dataset.candidate = c.id;
-    const displayName = (c.display_name && c.name) ? c.name : 'Anonymous';
+    const showNameFlag = c.display_name && c.name;
+    const showAgeFlag = c.show_age && c.age;
+    const nameAgeParts = [];
+    if(showNameFlag) nameAgeParts.push(c.name);
+    if(showAgeFlag) nameAgeParts.push(c.age);
+    const headingText = nameAgeParts.length ? nameAgeParts.join(', ') : 'Nearby match';
+    const statusText = lastSeenText(c.last_active);
+    const isOnline = statusText === 'Online now';
     const chips = (c.interests||[]).map(i=>'<span class="chip selected" style="cursor:default">'+i+'</span>').join('');
     const photoUrl = photoMap[c.id];
     const photoHtml = photoUrl
@@ -1099,15 +1195,16 @@ async function loadDiscovery(){
     card.innerHTML =
       photoHtml +
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<h2 style="margin:0;">'+displayName+'</h2>' +
-        (c.show_online ? '<span class="statusbadge"><span class="dot"></span> Online now</span>' : '') +
+        '<h2 style="margin:0;">'+headingText+'</h2>' +
+        '<span class="statusbadge">'+(isOnline?'<span class="dot"></span> ':'')+statusText+'</span>' +
       '</div>' +
-      '<div class="sub" style="margin:4px 0 12px;">'+(c.gender||'')+' · '+c._distance.toFixed(1)+' km away</div>' +
+      '<div class="sub" style="margin:4px 0 12px;">'+(c.gender?c.gender+' · ':'')+c._distance.toFixed(1)+' km away</div>' +
       '<p class="sub" style="margin-bottom:12px;">'+(c.bio||'No bio yet.')+'</p>' +
       '<div class="chips" style="margin-bottom:14px;">'+chips+'</div>' +
-      '<div style="display:flex;gap:10px;">' +
-        '<button class="nextbtn" style="background:var(--card2);flex:1;" onclick="passCandidate(\''+c.id+'\')">Pass</button>' +
-        '<button class="nextbtn" style="flex:1;" onclick="likeCandidate(\''+c.id+'\')">Like</button>' +
+      '<div class="dcard-actions">' +
+        '<button class="dbtn dbtn-x" onclick="passCandidate(\''+c.id+'\')" title="Not interested">&#10005;</button>' +
+        '<button class="dbtn dbtn-skip" onclick="skipCandidate(\''+c.id+'\')" title="Maybe later">&#8635;</button>' +
+        '<button class="dbtn dbtn-like" onclick="likeCandidate(\''+c.id+'\')" title="Like">&#9829;</button>' +
       '</div>' +
       '<div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11.5px;">' +
         '<span class="modal-link" onclick="blockUser(\''+c.id+'\')">Block</span>' +
@@ -1121,6 +1218,12 @@ async function passCandidate(id){
   const card = document.querySelector('[data-candidate="'+id+'"]');
   if(card) card.remove();
   await sb.from('passes').insert({ passer_id: state.userId, passed_id: id });
+  checkEmpty();
+}
+
+function skipCandidate(id){
+  const card = document.querySelector('[data-candidate="'+id+'"]');
+  if(card) card.remove();
   checkEmpty();
 }
 
@@ -1293,60 +1396,25 @@ function checkEmpty(){
   }
 }
 
-async function loadLikes(){
-  const container = document.getElementById('likesList');
-  container.innerHTML = '<div class="hint">Loading...</div>';
-
-  const { data: myLikes, error } = await sb.from('likes').select('liked_id').eq('liker_id', state.userId);
-  if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
-  if(!myLikes.length){ container.innerHTML = '<div class="hint">You haven\'t liked anyone yet — head to Discover.</div>'; return; }
-
-  const { data: myBlocks } = await sb.from('blocks').select('blocked_id').eq('blocker_id', state.userId);
-  const blockedSet = new Set((myBlocks||[]).map(b=>b.blocked_id));
-  const ids = myLikes.map(l=>l.liked_id).filter(id => !blockedSet.has(id));
-  if(!ids.length){ container.innerHTML = '<div class="hint">You haven\'t liked anyone yet — head to Discover.</div>'; return; }
-
-  const { data: profiles } = await sb.from('profiles').select('id,name,display_name,gender').in('id', ids);
-  const { data: matches } = await sb.from('matches').select('user_a,user_b').or('user_a.eq.'+state.userId+',user_b.eq.'+state.userId);
-  const matchedIds = new Set();
-  (matches||[]).forEach(m=>{ matchedIds.add(m.user_a===state.userId ? m.user_b : m.user_a); });
-  const profileMap = {};
-  (profiles||[]).forEach(p=>{ profileMap[p.id]=p; });
-
-  container.innerHTML = '';
-  ids.forEach(id=>{
-    const p = profileMap[id] || {};
-    const displayName = (p.display_name && p.name) ? p.name : 'Anonymous';
-    const isMatched = matchedIds.has(id);
-    const row = document.createElement('div');
-    row.className = 'discover-card';
-    row.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<h2 style="margin:0;font-size:16px;">'+displayName+'</h2>' +
-        '<span class="statusbadge">'+(isMatched ? 'Matched' : 'Pending')+'</span>' +
-      '</div>' +
-      '<div class="sub">'+(p.gender||'')+'</div>';
-    container.appendChild(row);
-  });
-}
-
 async function loadSettings(){
   const { data: s } = await sb.from('search_settings').select('*').eq('user_id', state.userId).single();
-  document.querySelectorAll('#setGenders .chip').forEach(el=>{
+  document.querySelectorAll('#setGenders .opt').forEach(el=>{
     el.classList.toggle('selected', !!(s && s.genders && s.genders.includes(el.dataset.val)));
   });
-  document.getElementById('setAgeMin').value = s ? s.age_min : '';
-  document.getElementById('setAgeMax').value = s ? s.age_max : '';
-  document.getElementById('setRadius').value = s ? s.radius_km : '';
+  document.getElementById('setAgeMin').value = s ? s.age_min : 18;
+  document.getElementById('setAgeMax').value = s ? s.age_max : 99;
+  document.getElementById('setRadius').value = s ? s.radius_km : 20;
+  updateSetAge();
+  updateSetRadius();
   document.getElementById('settingsHint').textContent = '';
 }
 
-document.querySelectorAll('#setGenders .chip').forEach(el=>{
+document.querySelectorAll('#setGenders .opt').forEach(el=>{
   el.addEventListener('click', ()=> el.classList.toggle('selected'));
 });
 
 async function saveSettings(){
-  const genders = [...document.querySelectorAll('#setGenders .chip.selected')].map(el=>el.dataset.val);
+  const genders = [...document.querySelectorAll('#setGenders .opt.selected')].map(el=>el.dataset.val);
   const age_min = parseInt(document.getElementById('setAgeMin').value) || 18;
   const age_max = parseInt(document.getElementById('setAgeMax').value) || 99;
   const radius_km = parseInt(document.getElementById('setRadius').value) || 20;
@@ -1387,14 +1455,14 @@ selectSingle('q2b','intent');
 selectSingle('q3a','style');
 selectSingle('q3b','structure');
 selectMulti('q3a-tags','kinkTags','chip');
-selectMulti('q4-genders','genders','chip');
-selectMulti('q5-gender','__genderSingle','chip'); // temp, overridden below
+selectMulti('q4-genders','genders','opt');
+selectMulti('q5-gender','__genderSingle','opt'); // temp, overridden below
 selectMulti('q5-interests','interests','chip');
 
 // gender on profile page should be single-select, override:
-document.querySelectorAll('#q5-gender .chip').forEach(el=>{
+document.querySelectorAll('#q5-gender .opt').forEach(el=>{
   el.addEventListener('click', ()=>{
-    document.querySelectorAll('#q5-gender .chip').forEach(o=>o.classList.remove('selected'));
+    document.querySelectorAll('#q5-gender .opt').forEach(o=>o.classList.remove('selected'));
     el.classList.add('selected');
     state.gender = el.dataset.val;
     updateNextState();
@@ -1430,6 +1498,7 @@ document.getElementById('suEmail').addEventListener('input', e=>{ state.email = 
 document.getElementById('suPass').addEventListener('input', e=>{ state.password = e.target.value; updateNextState(); });
 document.getElementById('suPass2').addEventListener('input', e=>{ state.password2 = e.target.value; updateNextState(); });
 document.getElementById('pName').addEventListener('input', e=>{ state.name = e.target.value; updateNextState(); });
+document.getElementById('pAge').addEventListener('input', e=>{ state.age = parseInt(e.target.value) || null; updateNextState(); });
 document.getElementById('pBio').addEventListener('input', e=>{ state.bio = e.target.value; updateNextState(); });
 async function uploadPhoto(event, index){
   const file = event.target.files[0];
@@ -1466,7 +1535,7 @@ async function uploadPhoto(event, index){
 function toggleSwitch(id){
   const el = document.getElementById(id);
   el.classList.toggle('on');
-  const map = {toggleNameShow:'showName', toggleOnline:'showOnline', toggleLastSeen:'showLastSeen'};
+  const map = {toggleNameShow:'showName', toggleAgeShow:'showAge', toggleOnline:'showOnline', toggleLastSeen:'showLastSeen'};
   state[map[id]] = el.classList.contains('on');
 }
 
@@ -1479,11 +1548,27 @@ function updateAge(){
 }
 function updateRadius(){
   state.radius = document.getElementById('radius').value;
-  document.getElementById('radiusVal').textContent = state.radius + ' miles';
+  document.getElementById('radiusVal').textContent = state.radius + ' km';
+}
+function updateSetAge(){
+  let min = parseInt(document.getElementById('setAgeMin').value);
+  let max = parseInt(document.getElementById('setAgeMax').value);
+  if(min > max-1){ min = max-1; document.getElementById('setAgeMin').value = min; }
+  document.getElementById('setAgeVal').textContent = min + ' – ' + max;
+}
+function updateSetRadius(){
+  document.getElementById('setRadiusVal').textContent = document.getElementById('setRadius').value + ' km';
 }
 
 function validate(page){
   if(page===1){
+    if(state.authMode === 'login'){
+      if(!state.email || !state.password){
+        document.getElementById('hint').textContent = 'Enter your email and password.';
+        return false;
+      }
+      return true;
+    }
     if(!state.email || !state.password || state.password !== state.password2){
       document.getElementById('hint').textContent = !state.email || !state.password ? 'Enter an email and password.' : 'Passwords don\'t match.';
       return false;
@@ -1494,8 +1579,8 @@ function validate(page){
     }
   }
   if(page===6){
-    if(!state.name || !state.gender || !state.bio || state.photos<1){
-      document.getElementById('hint').textContent = 'Fill required fields: name, gender, bio, and at least 1 photo.';
+    if(!state.name || !state.age || !state.gender || !state.bio || state.photos<1){
+      document.getElementById('hint').textContent = 'Fill required fields: name, age, gender, bio, and at least 1 photo.';
       return false;
     }
   }
@@ -1518,8 +1603,9 @@ function renderReview(){
     ['Structure', state.structure],
     ['Search genders', state.genders.join(', ') || '—'],
     ['Age range', state.ageMin+'–'+state.ageMax],
-    ['Radius', state.radius+' mi'],
+    ['Radius', state.radius+' km'],
     ['Name', (state.name||'—') + (state.showName ? '' : ' (hidden, initials shown)')],
+    ['Age', (state.age||'—') + (state.age && !state.showAge ? ' (hidden)' : '')],
     ['Gender', state.gender],
     ['Photos', state.photos + ' uploaded'],
     ['Interests', state.interests.join(', ') || '—'],
@@ -1540,6 +1626,7 @@ async function doLogin(){
   if(error){ document.getElementById('hint').textContent = error.message; return; }
   state.userId = data.user.id;
   state.email = email;
+  await sb.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', state.userId);
   const { data: profile } = await sb.from('profiles').select('name,gender,bio').eq('id', state.userId).maybeSingle();
   current = (profile && profile.name && profile.gender && profile.bio) ? 8 : 2;
   showPage(current);
@@ -1555,6 +1642,7 @@ async function bootstrap(){
   if(session){
     state.userId = session.user.id;
     state.email = session.user.email;
+    sb.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', state.userId).then(()=>{});
     const { data: profile } = await sb.from('profiles').select('name,gender,bio').eq('id', state.userId).maybeSingle();
     current = (profile && profile.name && profile.gender && profile.bio) ? 8 : 2;
     showPage(current);
