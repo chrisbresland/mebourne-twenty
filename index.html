@@ -482,7 +482,7 @@
         <span>I agree to the <span class="modal-link" data-modal="modalTerms">Terms of Service</span> and <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> <span class="required">*</span></span>
       </label>
 
-      <div class="hint" style="margin-top:10px;">Already have an account? <span style="color:var(--text);text-decoration:underline;cursor:pointer;">Log in</span></div>
+      <div class="hint" style="margin-top:10px;">Already have an account? <span style="color:var(--text);text-decoration:underline;cursor:pointer;" onclick="doLogin()">Log in</span></div>
 
       <div class="footlinks">
         <span class="modal-link" data-modal="modalTerms">Terms</span> &nbsp;·&nbsp;
@@ -680,7 +680,11 @@
     <div class="page" data-page="8">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <h1 style="margin:0;">Discover</h1>
-        <span class="modal-link" onclick="current=9;showPage(9);">Messages</span>
+        <div>
+          <span class="modal-link" onclick="current=9;showPage(9);">Messages</span>
+          &nbsp;·&nbsp;
+          <span class="modal-link" onclick="doLogout()">Log out</span>
+        </div>
       </div>
       <p class="sub">People near you, closest first.</p>
       <div class="hint" id="discoveryHint" style="margin-bottom:12px;"></div>
@@ -1225,7 +1229,37 @@ function renderReview(){
   ).join('') + '<div class="expirenote">If Intent = "Looking now," this profile\'s active match window expires 2 hours after setup.</div>';
 }
 
-showPage(1);
+async function doLogin(){
+  const email = document.getElementById('suEmail').value;
+  const password = document.getElementById('suPass').value;
+  if(!email || !password){ document.getElementById('hint').textContent = 'Enter your email and password above, then click Log in.'; return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){ document.getElementById('hint').textContent = error.message; return; }
+  state.userId = data.user.id;
+  state.email = email;
+  const { data: profile } = await sb.from('profiles').select('name,gender,bio').eq('id', state.userId).maybeSingle();
+  current = (profile && profile.name && profile.gender && profile.bio) ? 8 : 2;
+  showPage(current);
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+async function bootstrap(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    state.userId = session.user.id;
+    state.email = session.user.email;
+    const { data: profile } = await sb.from('profiles').select('name,gender,bio').eq('id', state.userId).maybeSingle();
+    current = (profile && profile.name && profile.gender && profile.bio) ? 8 : 2;
+    showPage(current);
+  } else {
+    showPage(1);
+  }
+}
+bootstrap();
 </script>
 
 </body>
