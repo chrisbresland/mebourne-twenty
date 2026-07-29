@@ -988,7 +988,7 @@ async function likeCandidate(id){
   if(card){ card.style.opacity = '0.5'; card.style.pointerEvents = 'none'; }
 
   const { error: likeErr } = await sb.from('likes').insert({ liker_id: state.userId, liked_id: id });
-  if(likeErr){
+  if(likeErr && likeErr.code !== '23505'){
     document.getElementById('discoveryHint').textContent = 'Like failed: ' + likeErr.message;
     if(card){ card.style.opacity = '1'; card.style.pointerEvents = ''; }
     return;
