@@ -721,7 +721,14 @@
 
     <!-- PAGE 11: Chat thread -->
     <div class="page" data-page="11">
-      <h1 id="chatTitle" style="margin-bottom:6px;">Chat</h1>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <h1 id="chatTitle" style="margin:0;">Chat</h1>
+        <div>
+          <span class="modal-link" onclick="blockAndLeaveChat()">Block</span>
+          &nbsp;·&nbsp;
+          <span class="modal-link" onclick="openReport(state.activeMatchUser)">Report</span>
+        </div>
+      </div>
       <div id="chatMessages" style="margin-bottom:12px;"></div>
       <div style="display:flex;gap:8px;">
         <input type="text" id="chatInput" placeholder="Type a message...">
@@ -838,6 +845,31 @@
       </div>
       <button class="nextbtn" onclick="sendContact()">Send message</button>
       <div class="contact-confirm" id="contactHint"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: Report -->
+  <div class="modal-overlay" id="modalReport">
+    <div class="modal-sheet">
+      <div class="modal-close" onclick="closeModal('modalReport')">✕</div>
+      <h2>Report</h2>
+      <p style="margin-bottom:16px;">This goes straight to the safety team.</p>
+      <div class="qgroup">
+        <div class="qlabel">Reason</div>
+        <select id="reportReason">
+          <option>Fake profile</option>
+          <option>Harassment or abuse</option>
+          <option>Inappropriate photos</option>
+          <option>Underage</option>
+          <option>Something else</option>
+        </select>
+      </div>
+      <div class="qgroup">
+        <div class="qlabel">Details (optional)</div>
+        <textarea id="reportMessage" placeholder="Anything else we should know?"></textarea>
+      </div>
+      <button class="nextbtn" onclick="submitReport()">Submit report</button>
+      <div class="contact-confirm" id="reportHint"></div>
     </div>
   </div>
 </div>
@@ -1020,9 +1052,11 @@ async function loadDiscovery(){
 
   const { data: myLikes } = await sb.from('likes').select('liked_id').eq('liker_id', state.userId);
   const { data: myPasses } = await sb.from('passes').select('passed_id').eq('passer_id', state.userId);
+  const { data: myBlocks } = await sb.from('blocks').select('blocked_id').eq('blocker_id', state.userId);
   const excludeIds = new Set([
     ...(myLikes||[]).map(l=>l.liked_id),
-    ...(myPasses||[]).map(p=>p.passed_id)
+    ...(myPasses||[]).map(p=>p.passed_id),
+    ...(myBlocks||[]).map(b=>b.blocked_id)
   ]);
 
   const wanted = (mySettings.genders && mySettings.genders.length) ? mySettings.genders : ['Everyone'];
@@ -1069,6 +1103,10 @@ async function loadDiscovery(){
       '<div style="display:flex;gap:10px;">' +
         '<button class="nextbtn" style="background:var(--card2);flex:1;" onclick="passCandidate(\''+c.id+'\')">Pass</button>' +
         '<button class="nextbtn" style="flex:1;" onclick="likeCandidate(\''+c.id+'\')">Like</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11.5px;">' +
+        '<span class="modal-link" onclick="blockUser(\''+c.id+'\')">Block</span>' +
+        '<span class="modal-link" onclick="openReport(\''+c.id+'\')">Report</span>' +
       '</div>';
     container.appendChild(card);
   });
@@ -1079,6 +1117,39 @@ async function passCandidate(id){
   if(card) card.remove();
   await sb.from('passes').insert({ passer_id: state.userId, passed_id: id });
   checkEmpty();
+}
+
+async function blockUser(id){
+  await sb.from('blocks').insert({ blocker_id: state.userId, blocked_id: id });
+  const card = document.querySelector('[data-candidate="'+id+'"]');
+  if(card) card.remove();
+  const hint = document.getElementById('discoveryHint');
+  if(hint) hint.textContent = 'Blocked — you won\'t see them again.';
+  if(typeof checkEmpty === 'function') checkEmpty();
+}
+
+async function blockAndLeaveChat(){
+  if(!state.activeMatchUser) return;
+  await blockUser(state.activeMatchUser);
+  navTo(10);
+}
+
+let reportTargetId = null;
+function openReport(userId){
+  reportTargetId = userId;
+  document.getElementById('reportMessage').value = '';
+  document.getElementById('reportHint').textContent = '';
+  openModal('modalReport');
+}
+
+async function submitReport(){
+  if(!reportTargetId) return;
+  const reason = document.getElementById('reportReason').value;
+  const message = document.getElementById('reportMessage').value;
+  const { error } = await sb.from('reports').insert({ reporter_id: state.userId, reported_id: reportTargetId, reason, message });
+  const hint = document.getElementById('reportHint');
+  if(error){ hint.textContent = 'Failed: ' + error.message; return; }
+  hint.textContent = 'Report submitted. Thank you.';
 }
 
 async function likeCandidate(id){
@@ -1116,8 +1187,13 @@ async function loadMatches(){
   if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
   if(!matches.length){ container.innerHTML = '<div class="hint">No matches yet — go back to Discover and start liking people.</div>'; return; }
 
-  const otherIds = matches.map(m => m.user_a === state.userId ? m.user_b : m.user_a);
-  const matchIds = matches.map(m => m.id);
+  const { data: myBlocks } = await sb.from('blocks').select('blocked_id').eq('blocker_id', state.userId);
+  const blockedSet = new Set((myBlocks||[]).map(b=>b.blocked_id));
+  const visibleMatches = matches.filter(m => !blockedSet.has(m.user_a === state.userId ? m.user_b : m.user_a));
+  if(!visibleMatches.length){ container.innerHTML = '<div class="hint">No matches yet — go back to Discover and start liking people.</div>'; return; }
+
+  const otherIds = visibleMatches.map(m => m.user_a === state.userId ? m.user_b : m.user_a);
+  const matchIds = visibleMatches.map(m => m.id);
 
   const { data: profiles } = await sb.from('profiles').select('id,name,display_name,gender').in('id', otherIds);
   const { data: photos } = await sb.from('photos').select('user_id,url').eq('is_main', true).in('user_id', otherIds);
@@ -1134,7 +1210,7 @@ async function loadMatches(){
   (recentMessages||[]).forEach(m=>{ if(!lastMsgMap[m.match_id]) lastMsgMap[m.match_id] = m; });
 
   container.innerHTML = '';
-  matches.forEach(m=>{
+  visibleMatches.forEach(m=>{
     const otherId = m.user_a === state.userId ? m.user_b : m.user_a;
     const p = profileMap[otherId] || {};
     const displayName = (p.display_name && p.name) ? p.name : 'Anonymous';
@@ -1220,7 +1296,11 @@ async function loadLikes(){
   if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
   if(!myLikes.length){ container.innerHTML = '<div class="hint">You haven\'t liked anyone yet — head to Discover.</div>'; return; }
 
-  const ids = myLikes.map(l=>l.liked_id);
+  const { data: myBlocks } = await sb.from('blocks').select('blocked_id').eq('blocker_id', state.userId);
+  const blockedSet = new Set((myBlocks||[]).map(b=>b.blocked_id));
+  const ids = myLikes.map(l=>l.liked_id).filter(id => !blockedSet.has(id));
+  if(!ids.length){ container.innerHTML = '<div class="hint">You haven\'t liked anyone yet — head to Discover.</div>'; return; }
+
   const { data: profiles } = await sb.from('profiles').select('id,name,display_name,gender').in('id', ids);
   const { data: matches } = await sb.from('matches').select('user_a,user_b').or('user_a.eq.'+state.userId+',user_b.eq.'+state.userId);
   const matchedIds = new Set();
