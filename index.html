@@ -809,11 +809,14 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <h1 id="chatTitle" style="margin:0;">Chat</h1>
         <div>
+          <span class="modal-link" onclick="confirmUnmatch()">Unmatch</span>
+          &nbsp;·&nbsp;
           <span class="modal-link" onclick="blockAndLeaveChat()">Block</span>
           &nbsp;·&nbsp;
           <span class="modal-link" onclick="openReport(state.activeMatchUser)">Report</span>
         </div>
       </div>
+      <div id="chatPhotoStrip" style="display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;"></div>
       <div id="chatMessages" style="margin-bottom:12px;"></div>
       <div style="display:flex;gap:8px;">
         <label class="dbtn" style="width:44px;height:44px;font-size:18px;flex-shrink:0;" title="Send a self-destructing photo">
@@ -1394,8 +1397,13 @@ async function loadDiscovery(){
     .filter(c => c.lat!=null && c.lng!=null)
     .map(c => ({...c, _distance: distanceKm(myProfile.lat, myProfile.lng, c.lat, c.lng), _fromCbd: distanceKm(CBD_LAT, CBD_LNG, c.lat, c.lng)}))
     .filter(c => c._fromCbd <= (mySettings.radius_km || 20))
-    .filter(c => wantsEveryone || wantedSingular.includes(c.gender))
-    .sort((a,b) => a._distance - b._distance);
+    .filter(c => wantsEveryone || wantedSingular.includes(c.gender));
+
+  // shuffle order every time Discover opens, rather than always sorting by distance
+  for(let i = filtered.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+  }
 
   container.innerHTML = '';
   if(!filtered.length){
@@ -1576,10 +1584,30 @@ async function loadMatches(){
           '<span class="sub" style="font-size:11px;">'+(p.gender||'')+'</span>' +
         '</div>' +
         '<div class="sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+preview+'</div>' +
-      '</div>';
+      '</div>' +
+      '<span class="dbtn dbtn-x" style="width:36px;height:36px;font-size:14px;flex-shrink:0;" title="Unmatch" onclick="event.stopPropagation();unmatchFromList(\''+m.id+'\')">&#10005;</span>';
     row.addEventListener('click', ()=> openChat(m.id, otherId));
     container.appendChild(row);
   });
+}
+
+async function unmatchFromList(matchId){
+  if(!confirm('Unmatch? This deletes the conversation and you\'ll both stop seeing each other in Matches.')) return;
+  await sb.from('messages').delete().eq('match_id', matchId);
+  await sb.from('matches').delete().eq('id', matchId);
+  loadMatches();
+}
+
+function confirmUnmatch(){
+  if(!state.activeMatchId) return;
+  if(!confirm('Unmatch? This deletes the conversation and you\'ll both stop seeing each other in Matches.')) return;
+  doUnmatch();
+}
+
+async function doUnmatch(){
+  await sb.from('messages').delete().eq('match_id', state.activeMatchId);
+  await sb.from('matches').delete().eq('id', state.activeMatchId);
+  navTo(10);
 }
 
 function openChat(matchId, otherId){
@@ -1593,6 +1621,18 @@ async function loadChatThread(){
   const titleEl = document.getElementById('chatTitle');
   const { data: p } = await sb.from('profiles').select('name,display_name').eq('id', state.activeMatchUser).single();
   titleEl.textContent = (p && p.display_name && p.name) ? p.name : 'Chat';
+
+  const stripEl = document.getElementById('chatPhotoStrip');
+  const { data: photos } = await sb.from('photos').select('url,is_main,is_hidden').eq('user_id', state.activeMatchUser);
+  stripEl.innerHTML = (photos||[])
+    .sort((a,b)=> (b.is_main?1:0) - (a.is_main?1:0))
+    .map(ph=>
+      '<div style="position:relative;flex-shrink:0;">' +
+        '<img src="'+ph.url+'" style="width:64px;height:64px;border-radius:10px;object-fit:cover;">' +
+        (ph.is_hidden ? '<span style="position:absolute;bottom:2px;right:2px;font-size:10px;background:rgba(0,0,0,.6);border-radius:6px;padding:1px 4px;">&#128274;</span>' : '') +
+      '</div>'
+    ).join('');
+
   await refreshMessages();
 }
 
