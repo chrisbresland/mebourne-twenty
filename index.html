@@ -860,6 +860,13 @@
       <button class="nextbtn" onclick="saveSettings()">Save settings</button>
       <div class="hint" id="settingsHint" style="margin-top:10px;"></div>
 
+      <div class="qgroup" style="margin-top:20px;">
+        <div class="toggle-row" style="cursor:pointer;" onclick="doRefreshLocation()">
+          <div class="lbl">Refresh my location<small id="locRefreshStatus">Updates who can discover you based on where you are now</small></div>
+          <span style="font-size:18px;">&#128205;</span>
+        </div>
+      </div>
+
       <div class="footlinks" style="margin-top:26px;">
         <span class="modal-link" data-modal="modalTerms">Terms</span> &nbsp;·&nbsp;
         <span class="modal-link" data-modal="modalPrivacy">Privacy Policy</span> &nbsp;·&nbsp;
@@ -1043,6 +1050,21 @@ function requestLocation(){
   navigator.geolocation.getCurrentPosition(
     pos => { state.lat = pos.coords.latitude; state.lng = pos.coords.longitude; },
     err => { console.log('location not available:', err.message); }
+  );
+}
+
+function refreshLocation(onDone){
+  if(!navigator.geolocation){ if(onDone) onDone(false); return; }
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      state.lat = pos.coords.latitude;
+      state.lng = pos.coords.longitude;
+      if(state.userId){
+        await sb.from('profiles').update({ lat: state.lat, lng: state.lng }).eq('id', state.userId);
+      }
+      if(onDone) onDone(true);
+    },
+    err => { console.log('location not available:', err.message); if(onDone) onDone(false); }
   );
 }
 
@@ -1504,6 +1526,14 @@ document.querySelectorAll('#setGenders .opt').forEach(el=>{
   el.addEventListener('click', ()=> el.classList.toggle('selected'));
 });
 
+function doRefreshLocation(){
+  const status = document.getElementById('locRefreshStatus');
+  status.textContent = 'Locating...';
+  refreshLocation((ok)=>{
+    status.textContent = ok ? 'Updated just now' : 'Couldn\'t get your location — check permissions.';
+  });
+}
+
 async function saveSettings(){
   const genders = [...document.querySelectorAll('#setGenders .opt.selected')].map(el=>el.dataset.val);
   const age_min = parseInt(document.getElementById('setAgeMin').value) || 18;
@@ -1723,6 +1753,7 @@ async function doLogin(){
   state.userId = data.user.id;
   state.email = email;
   await sb.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', state.userId);
+  refreshLocation();
   const { data: profile } = await sb.from('profiles').select('name,gender,bio').eq('id', state.userId).maybeSingle();
   current = (profile && profile.name && profile.gender && profile.bio) ? 8 : 2;
   showPage(current);
@@ -1739,6 +1770,7 @@ async function bootstrap(){
     state.userId = session.user.id;
     state.email = session.user.email;
     sb.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', state.userId).then(()=>{});
+    refreshLocation();
     const { data: profile } = await sb.from('profiles').select('name,gender,bio').eq('id', state.userId).maybeSingle();
     current = (profile && profile.name && profile.gender && profile.bio) ? 8 : 2;
     showPage(current);
