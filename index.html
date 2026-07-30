@@ -826,9 +826,13 @@
       <div class="hint" id="chatHint">Photos disappear once opened.</div>
     </div>
 
-    <!-- PAGE 12: Settings -->
+    <!-- PAGE 12: Search Settings -->
     <div class="page" data-page="12">
       <h1 style="margin:0 0 14px;">Settings</h1>
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        <div class="opt" style="padding:10px;flex:1;text-align:center;" onclick="navTo(13)">Profile</div>
+        <div class="opt selected" style="padding:10px;flex:1;text-align:center;" onclick="navTo(12)">Search</div>
+      </div>
 
       <div class="qgroup">
         <div class="qlabel">Genders you want to see</div>
@@ -876,6 +880,145 @@
         <span class="modal-link" onclick="doLogout()">Log out</span>
       </div>
     </div>
+
+
+    <!-- PAGE 13: Profile Settings -->
+    <div class="page" data-page="13">
+      <h1 style="margin:0 0 14px;">Settings</h1>
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        <div class="opt selected" style="padding:10px;flex:1;text-align:center;" onclick="navTo(13)">Profile</div>
+        <div class="opt" style="padding:10px;flex:1;text-align:center;" onclick="navTo(12)">Search</div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Name</div>
+        <input type="text" id="psName" placeholder="Enter your name">
+        <div class="toggle-row">
+          <div class="lbl">Display name on profile<small>Off shows initials only</small></div>
+          <div class="switch on" id="psToggleNameShow" onclick="toggleSwitch2('psToggleNameShow')"></div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Age</div>
+        <input type="text" inputmode="numeric" id="psAge" placeholder="Your age">
+        <div class="toggle-row">
+          <div class="lbl">Display age on profile<small>Off hides your age from others</small></div>
+          <div class="switch on" id="psToggleAgeShow" onclick="toggleSwitch2('psToggleAgeShow')"></div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Gender</div>
+        <div class="options optgrid" id="psGender">
+          <div class="opt" data-val="Woman">Woman</div>
+          <div class="opt" data-val="Man">Man</div>
+          <div class="opt" data-val="Nonbinary">Nonbinary</div>
+          <div class="opt" data-val="Other">Other</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Side of town</div>
+        <div class="options" id="psSide">
+          <div class="opt" data-val="North side">North side</div>
+          <div class="opt" data-val="South side">South side</div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+        <div class="toggle-row">
+          <div class="lbl">Auto-detect from my location<small>Off keeps your side fixed even if you move</small></div>
+          <div class="switch on" id="psToggleSideAuto" onclick="toggleSideAuto()"></div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Orientation</div>
+        <div class="options" id="psOrientation">
+          <div class="opt" data-val="LGBTQ+">LGBTQ+</div>
+          <div class="opt" data-val="Hetero">Hetero</div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Intent</div>
+        <div class="options" id="psIntent">
+          <div class="opt" data-val="Looking now">Looking now<small>Connection expires in 2 hours</small></div>
+          <div class="opt" data-val="Planning ahead">Planning ahead<small>No time limit</small></div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Vanilla or kink</div>
+        <div class="options" id="psStyle">
+          <div class="opt" data-val="Vanilla">Vanilla</div>
+          <div class="opt" data-val="Kink">Kink</div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+        <div class="kink-tags" id="psKinkTags">
+          <div class="qlabel">Tags <span style="font-weight:400;text-transform:none;color:var(--muted)">(select all that apply)</span></div>
+          <div class="chips" id="psStyleTags">
+            <div class="chip" data-val="Dom">Dom</div>
+            <div class="chip" data-val="Sub">Sub</div>
+            <div class="chip" data-val="Switch">Switch</div>
+            <div class="chip" data-val="Rope/Shibari">Rope/Shibari</div>
+            <div class="chip" data-val="Impact play">Impact play</div>
+            <div class="chip" data-val="Voyeur">Voyeur</div>
+            <div class="chip" data-val="Exhibitionist">Exhibitionist</div>
+            <div class="chip" data-val="Roleplay">Roleplay</div>
+            <div class="chip" data-val="Poly-curious">Poly-curious</div>
+            <div class="chip" data-val="Sensory">Sensory</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Relationship structure</div>
+        <div class="options" id="psStructure">
+          <div class="opt" data-val="Monogamy">Monogamy</div>
+          <div class="opt" data-val="Non-monogamy">Non-monogamy</div>
+          <div class="opt" data-val="Both">Both</div>
+        </div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Bio <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional)</span></div>
+        <textarea id="psBio" placeholder="Tell people a bit about you..."></textarea>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Photos <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional)</span></div>
+        <div class="photogrid" id="psPhotoGrid">
+          <label class="photoslot main" id="ps-slot0"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,0,'ps-slot','settingsHint2')"></label>
+          <label class="photoslot" id="ps-slot1"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,1,'ps-slot','settingsHint2')"></label>
+          <label class="photoslot" id="ps-slot2"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,2,'ps-slot','settingsHint2')"></label>
+          <label class="photoslot" id="ps-slot3"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,3,'ps-slot','settingsHint2')"></label>
+          <label class="photoslot" id="ps-slot4"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,4,'ps-slot','settingsHint2')"></label>
+          <label class="photoslot" id="ps-slot5"><span class="plus">+</span><input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event,5,'ps-slot','settingsHint2')"></label>
+        </div>
+        <div id="psPhotoHiddenToggles"></div>
+        <div class="hint" style="margin-top:6px;">Tap a photo above to add one. Use the switches below to hide specific photos from public Discover — hidden photos are only shown to your matches.</div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Interests <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional)</span></div>
+        <div class="chips" id="psInterests">
+          <div class="chip" data-val="Hiking">Hiking</div>
+          <div class="chip" data-val="Live music">Live music</div>
+          <div class="chip" data-val="Cooking">Cooking</div>
+          <div class="chip" data-val="Travel">Travel</div>
+          <div class="chip" data-val="Fitness">Fitness</div>
+          <div class="chip" data-val="Art">Art</div>
+          <div class="chip" data-val="Gaming">Gaming</div>
+          <div class="chip" data-val="Reading">Reading</div>
+        </div>
+      </div>
+
+      <button class="nextbtn" onclick="saveProfileSettings()">Save profile</button>
+      <div class="hint" id="settingsHint2" style="margin-top:10px;"></div>
+    </div>
+
 
   </div>
 
@@ -984,6 +1127,7 @@
 const SUPABASE_URL = 'https://mihyszbnatxleyrbltqc.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_a81SaMoE_wyTEnC96Z2z1Q_oRXSTIB7';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const CBD_LAT = -37.8136, CBD_LNG = 144.9631; // Melbourne CBD — radius and side are measured from here
 
 const totalPages = 8;
 const ONBOARDING_STEPS = 6;
@@ -991,7 +1135,7 @@ let current = 1;
 const state = {
   authMode:'welcome',
   email:'', password:'', ageConfirmed:false, agreedTerms:false,
-  side:null, orientation:null, intent:null,
+  side:null, sideAuto:true, orientation:null, intent:null,
   style:null, kinkTags:[], structure:null,
   genders:[], ageMin:22, ageMax:40, radius:10,
   name:'', showName:true, age:null, showAge:true, gender:null, bio:'', photos:0,
@@ -1053,6 +1197,10 @@ function requestLocation(){
   );
 }
 
+function computeSideFromLat(lat){
+  return lat > CBD_LAT ? 'North side' : 'South side';
+}
+
 function refreshLocation(onDone){
   if(!navigator.geolocation){ if(onDone) onDone(false); return; }
   navigator.geolocation.getCurrentPosition(
@@ -1061,6 +1209,16 @@ function refreshLocation(onDone){
       state.lng = pos.coords.longitude;
       if(state.userId){
         await sb.from('profiles').update({ lat: state.lat, lng: state.lng }).eq('id', state.userId);
+        const { data: prefs } = await sb.from('preferences').select('side,side_auto').eq('user_id', state.userId).maybeSingle();
+        if(!prefs || prefs.side_auto !== false){
+          const autoSide = computeSideFromLat(state.lat);
+          state.side = autoSide;
+          state.sideAuto = true;
+          await sb.from('preferences').upsert({ user_id: state.userId, side: autoSide, side_auto: true });
+        } else {
+          state.side = prefs.side;
+          state.sideAuto = false;
+        }
       }
       if(onDone) onDone(true);
     },
@@ -1090,7 +1248,7 @@ function renderProgress(){
 
 const NEXT_LABELS = {6:'Finish', 7:'Enter the app'};
 
-const NAV_TAB_MAP = {8:8, 10:10, 11:10, 12:12};
+const NAV_TAB_MAP = {8:8, 10:10, 11:10, 12:12, 13:12};
 
 function navTo(n){
   current = n;
@@ -1116,6 +1274,7 @@ function showPage(n){
   else if(n===10){ document.getElementById('progress').style.display='none'; loadMatches(); }
   else if(n===11){ document.getElementById('progress').style.display='none'; loadChatThread(); }
   else if(n===12){ document.getElementById('progress').style.display='none'; loadSettings(); }
+  else if(n===13){ document.getElementById('progress').style.display='none'; loadProfileSettings(); }
   else { document.getElementById('progress').style.display='flex'; renderProgress(); }
 
   if(chatPollTimer){ clearInterval(chatPollTimer); chatPollTimer = null; }
@@ -1148,7 +1307,7 @@ async function doSaveProfile(){
     gender: state.gender, bio: state.bio, interests: state.interests, lat: state.lat, lng: state.lng
   });
   const { error: e2 } = await sb.from('preferences').upsert({
-    user_id: state.userId, side: state.side, orientation: state.orientation, intent: state.intent,
+    user_id: state.userId, side: state.side, side_auto: state.sideAuto, orientation: state.orientation, intent: state.intent,
     style: state.style, kink_tags: state.kinkTags, structure: state.structure
   });
   const { error: e3 } = await sb.from('search_settings').upsert({
@@ -1192,7 +1351,6 @@ function goBack(){
 }
 
 const GENDER_MAP = { Women:'Woman', Men:'Man', Nonbinary:'Nonbinary' };
-const CBD_LAT = -37.8136, CBD_LNG = 144.9631; // Melbourne CBD — radius is measured from here, not from you
 
 async function loadDiscovery(){
   const container = document.getElementById('discoveryCards');
@@ -1543,6 +1701,110 @@ async function saveSettings(){
   document.getElementById('settingsHint').textContent = error ? ('Save failed: ' + error.message) : 'Saved.';
 }
 
+function toggleSwitch2(id){
+  document.getElementById(id).classList.toggle('on');
+}
+
+function toggleSideAuto(){
+  const el = document.getElementById('psToggleSideAuto');
+  el.classList.toggle('on');
+  const auto = el.classList.contains('on');
+  if(auto && state.lat != null){
+    const autoSide = computeSideFromLat(state.lat);
+    document.querySelectorAll('#psSide .opt').forEach(o=>o.classList.toggle('selected', o.dataset.val===autoSide));
+  }
+}
+
+async function loadProfileSettings(){
+  const hint = document.getElementById('settingsHint2');
+  hint.textContent = '';
+  const { data: p } = await sb.from('profiles').select('name,display_name,age,show_age,gender,bio,interests').eq('id', state.userId).maybeSingle();
+  const { data: prefs } = await sb.from('preferences').select('*').eq('user_id', state.userId).maybeSingle();
+
+  document.getElementById('psName').value = (p && p.name) || '';
+  document.getElementById('psAge').value = (p && p.age) || '';
+  document.getElementById('psBio').value = (p && p.bio) || '';
+  document.getElementById('psToggleNameShow').classList.toggle('on', !p || p.display_name !== false);
+  document.getElementById('psToggleAgeShow').classList.toggle('on', !p || p.show_age !== false);
+
+  document.querySelectorAll('#psGender .opt').forEach(o=>o.classList.toggle('selected', !!(p && o.dataset.val===p.gender)));
+  document.querySelectorAll('#psSide .opt').forEach(o=>o.classList.toggle('selected', !!(prefs && o.dataset.val===prefs.side)));
+  document.getElementById('psToggleSideAuto').classList.toggle('on', !prefs || prefs.side_auto !== false);
+  document.querySelectorAll('#psOrientation .opt').forEach(o=>o.classList.toggle('selected', !!(prefs && o.dataset.val===prefs.orientation)));
+  document.querySelectorAll('#psIntent .opt').forEach(o=>o.classList.toggle('selected', !!(prefs && o.dataset.val===prefs.intent)));
+  document.querySelectorAll('#psStyle .opt').forEach(o=>o.classList.toggle('selected', !!(prefs && o.dataset.val===prefs.style)));
+  document.getElementById('psKinkTags').classList.toggle('open', !!(prefs && (prefs.style==='Kink' || prefs.style==='Both')));
+  document.querySelectorAll('#psStyleTags .chip').forEach(o=>o.classList.toggle('selected', !!(prefs && prefs.kink_tags && prefs.kink_tags.includes(o.dataset.val))));
+  document.querySelectorAll('#psStructure .opt').forEach(o=>o.classList.toggle('selected', !!(prefs && o.dataset.val===prefs.structure)));
+  document.querySelectorAll('#psInterests .chip').forEach(o=>o.classList.toggle('selected', !!(p && p.interests && p.interests.includes(o.dataset.val))));
+
+  await loadProfilePhotos();
+}
+
+async function loadProfilePhotos(){
+  const { data: photos } = await sb.from('photos').select('id,url,is_main,is_hidden').eq('user_id', state.userId).order('is_main', { ascending: false });
+  for(let i=0;i<6;i++){
+    const slot = document.getElementById('ps-slot'+i);
+    const plus = slot.querySelector('.plus');
+    if(photos && photos[i]){
+      slot.style.backgroundImage = 'url('+photos[i].url+')';
+      slot.style.backgroundSize = 'cover';
+      slot.style.backgroundPosition = 'center';
+      if(plus) plus.style.display = 'none';
+    } else {
+      slot.style.backgroundImage = '';
+      if(plus) plus.style.display = '';
+    }
+  }
+  const container = document.getElementById('psPhotoHiddenToggles');
+  container.innerHTML = (photos||[]).map((p,i)=>
+    '<div class="toggle-row" style="margin-top:8px;">' +
+      '<div class="lbl">Photo '+(i+1)+(p.is_main?' (main)':'')+'<small>Hide from public Discover — visible only to matches</small></div>' +
+      '<div class="switch'+(p.is_hidden?' on':'')+'" onclick="toggleHiddenPhoto(\''+p.id+'\', this)"></div>' +
+    '</div>'
+  ).join('');
+}
+
+async function toggleHiddenPhoto(photoId, el){
+  el.classList.toggle('on');
+  const isHidden = el.classList.contains('on');
+  await sb.from('photos').update({ is_hidden: isHidden }).eq('id', photoId);
+}
+
+async function saveProfileSettings(){
+  const hint = document.getElementById('settingsHint2');
+  const name = document.getElementById('psName').value.trim();
+  const age = parseInt(document.getElementById('psAge').value) || null;
+  const bio = document.getElementById('psBio').value.trim();
+  const showName = document.getElementById('psToggleNameShow').classList.contains('on');
+  const showAge = document.getElementById('psToggleAgeShow').classList.contains('on');
+  const genderEl = document.querySelector('#psGender .opt.selected');
+  const sideEl = document.querySelector('#psSide .opt.selected');
+  const sideAuto = document.getElementById('psToggleSideAuto').classList.contains('on');
+  const orientationEl = document.querySelector('#psOrientation .opt.selected');
+  const intentEl = document.querySelector('#psIntent .opt.selected');
+  const styleEl = document.querySelector('#psStyle .opt.selected');
+  const kinkTags = [...document.querySelectorAll('#psStyleTags .chip.selected')].map(el=>el.dataset.val);
+  const structureEl = document.querySelector('#psStructure .opt.selected');
+  const interests = [...document.querySelectorAll('#psInterests .chip.selected')].map(el=>el.dataset.val);
+
+  const { error: e1 } = await sb.from('profiles').upsert({
+    id: state.userId, name, age, bio, display_name: showName, show_age: showAge,
+    gender: genderEl ? genderEl.dataset.val : null, interests
+  });
+  const { error: e2 } = await sb.from('preferences').upsert({
+    user_id: state.userId, side: sideEl ? sideEl.dataset.val : null, side_auto: sideAuto,
+    orientation: orientationEl ? orientationEl.dataset.val : null,
+    intent: intentEl ? intentEl.dataset.val : null,
+    style: styleEl ? styleEl.dataset.val : null,
+    kink_tags: kinkTags,
+    structure: structureEl ? structureEl.dataset.val : null
+  });
+  const err = e1 || e2;
+  hint.textContent = err ? ('Save failed: ' + err.message) : 'Saved.';
+  if(!err){ state.side = sideEl ? sideEl.dataset.val : state.side; state.sideAuto = sideAuto; }
+}
+
 function selectSingle(groupId, key){
   document.querySelectorAll('#'+groupId+' .opt').forEach(el=>{
     el.addEventListener('click', ()=>{
@@ -1570,11 +1832,12 @@ function selectMulti(groupId, key, chipClass){
   });
 }
 
-document.querySelectorAll('#q1 .sidecard, #q1 .opt').forEach(el=>{
+document.querySelectorAll('#q1 .sidecard, #q1 .opt, #q1both').forEach(el=>{
   el.addEventListener('click', ()=>{
-    document.querySelectorAll('#q1 .sidecard, #q1 .opt').forEach(o=>o.classList.remove('selected'));
+    document.querySelectorAll('#q1 .sidecard, #q1 .opt, #q1both').forEach(o=>o.classList.remove('selected'));
     el.classList.add('selected');
     state.side = el.dataset.val;
+    state.sideAuto = false;
     updateNextState();
   });
 });
@@ -1586,6 +1849,32 @@ selectMulti('q3a-tags','kinkTags','chip');
 selectMulti('q4-genders','genders','opt');
 selectMulti('q5-gender','__genderSingle','opt'); // temp, overridden below
 selectMulti('q5-interests','interests','chip');
+
+function psSelectSingle(groupId, onExtra){
+  document.querySelectorAll('#'+groupId+' .opt').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('#'+groupId+' .opt').forEach(o=>o.classList.remove('selected'));
+      el.classList.add('selected');
+      if(onExtra) onExtra(el);
+    });
+  });
+}
+function psSelectMulti(groupId){
+  document.querySelectorAll('#'+groupId+' .chip').forEach(el=>{
+    el.addEventListener('click', ()=> el.classList.toggle('selected'));
+  });
+}
+psSelectSingle('psGender');
+psSelectSingle('psSide', ()=>{ document.getElementById('psToggleSideAuto').classList.remove('on'); });
+psSelectSingle('psOrientation');
+psSelectSingle('psIntent');
+psSelectSingle('psStyle', (el)=>{
+  const open = (el.dataset.val==='Kink' || el.dataset.val==='Both');
+  document.getElementById('psKinkTags').classList.toggle('open', open);
+});
+psSelectMulti('psStyleTags');
+psSelectSingle('psStructure');
+psSelectMulti('psInterests');
 
 // gender on profile page should be single-select, override:
 document.querySelectorAll('#q5-gender .opt').forEach(el=>{
@@ -1628,24 +1917,26 @@ document.getElementById('suPass2').addEventListener('input', e=>{ state.password
 document.getElementById('pName').addEventListener('input', e=>{ state.name = e.target.value; updateNextState(); });
 document.getElementById('pAge').addEventListener('input', e=>{ state.age = parseInt(e.target.value) || null; updateNextState(); });
 document.getElementById('pBio').addEventListener('input', e=>{ state.bio = e.target.value; updateNextState(); });
-async function uploadPhoto(event, index){
+async function uploadPhoto(event, index, slotPrefix, hintId){
+  slotPrefix = slotPrefix || 'slot';
+  hintId = hintId || 'hint';
   const file = event.target.files[0];
   if(!file) return;
-  const slot = document.getElementById('slot'+index);
+  const slot = document.getElementById(slotPrefix+index);
   slot.style.opacity = '0.5';
 
   const path = state.userId + '/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
   const { error: upErr } = await sb.storage.from('photos').upload(path, file);
   if(upErr){
-    document.getElementById('hint').textContent = 'Upload failed: ' + upErr.message;
+    document.getElementById(hintId).textContent = 'Upload failed: ' + upErr.message;
     slot.style.opacity = '1';
     return;
   }
 
   const { data: pub } = sb.storage.from('photos').getPublicUrl(path);
-  const { error: dbErr } = await sb.from('photos').insert({ user_id: state.userId, url: pub.publicUrl, is_main: index===0 });
+  const { error: dbErr } = await sb.from('photos').insert({ user_id: state.userId, url: pub.publicUrl, is_main: index===0 && slotPrefix==='slot', moderation_status: 'pending' });
   if(dbErr){
-    document.getElementById('hint').textContent = 'Save failed: ' + dbErr.message;
+    document.getElementById(hintId).textContent = 'Save failed: ' + dbErr.message;
     slot.style.opacity = '1';
     return;
   }
@@ -1658,6 +1949,7 @@ async function uploadPhoto(event, index){
   if(plus) plus.style.display = 'none';
   state.photos++;
   updateNextState();
+  if(slotPrefix === 'ps-slot') loadProfilePhotos();
 }
 
 function toggleSwitch(id){
