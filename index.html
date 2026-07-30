@@ -1013,6 +1013,21 @@
       </div>
 
       <div class="qgroup">
+        <div class="qlabel">Get verified</div>
+        <div class="statusbadge" id="verifyStatusBadge" style="margin-bottom:10px;">Not verified</div>
+        <div id="verifyPromptBlock">
+          <p class="sub" style="margin-bottom:10px;">Take a quick live selfie so we can confirm it's really you. Do this exact pose so we know it's not an old photo:</p>
+          <div class="previewcard" style="text-align:center;margin-bottom:12px;">
+            <div id="verifyPoseText" style="font-size:15px;font-weight:700;">&#9995; Peace sign, right hand</div>
+          </div>
+          <label class="nextbtn" style="display:block;text-align:center;cursor:pointer;">
+            Take selfie
+            <input type="file" accept="image/*" capture="user" style="display:none;" onchange="submitVerification(event)">
+          </label>
+        </div>
+      </div>
+
+      <div class="qgroup">
         <div class="qlabel">Interests <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional)</span></div>
         <div class="chips" id="psInterests">
           <div class="chip" data-val="Hiking">Hiking</div>
@@ -1030,6 +1045,20 @@
       <div class="hint" id="settingsHint2" style="margin-top:10px;"></div>
     </div>
 
+    <!-- PAGE 14: Admin (only visible to admin account) -->
+    <div class="page" data-page="14">
+      <h1 style="margin:0 0 14px;">Admin review</h1>
+
+      <div class="qgroup">
+        <div class="qlabel">Pending photos</div>
+        <div id="adminPhotoQueue"></div>
+      </div>
+
+      <div class="qgroup">
+        <div class="qlabel">Pending verifications</div>
+        <div id="adminVerifyQueue"></div>
+      </div>
+    </div>
 
   </div>
 
@@ -1037,6 +1066,7 @@
     <div class="navitem" data-nav="8" onclick="navTo(8)">Discover</div>
     <div class="navitem" data-nav="10" onclick="navTo(10)">Matches</div>
     <div class="navitem" data-nav="12" onclick="navTo(12)">Settings</div>
+    <div class="navitem" data-nav="14" onclick="navTo(14)" id="adminNavItem" style="display:none;">Admin</div>
   </div>
 
   <div class="footer">
@@ -1139,6 +1169,7 @@ const SUPABASE_URL = 'https://mihyszbnatxleyrbltqc.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_a81SaMoE_wyTEnC96Z2z1Q_oRXSTIB7';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const CBD_LAT = -37.8136, CBD_LNG = 144.9631; // Melbourne CBD — radius and side are measured from here
+const ADMIN_EMAIL = 'chrisryanbresland@gmail.com';
 
 const totalPages = 8;
 const ONBOARDING_STEPS = 6;
@@ -1259,7 +1290,7 @@ function renderProgress(){
 
 const NEXT_LABELS = {6:'Finish', 7:'Enter the app'};
 
-const NAV_TAB_MAP = {8:8, 10:10, 11:10, 12:12, 13:12};
+const NAV_TAB_MAP = {8:8, 10:10, 11:10, 12:12, 13:12, 14:14};
 
 function navTo(n){
   current = n;
@@ -1286,6 +1317,7 @@ function showPage(n){
   else if(n===11){ document.getElementById('progress').style.display='none'; loadChatThread(); }
   else if(n===12){ document.getElementById('progress').style.display='none'; loadSettings(); }
   else if(n===13){ document.getElementById('progress').style.display='none'; loadProfileSettings(); }
+  else if(n===14){ document.getElementById('progress').style.display='none'; loadAdmin(); }
   else { document.getElementById('progress').style.display='flex'; renderProgress(); }
 
   if(chatPollTimer){ clearInterval(chatPollTimer); chatPollTimer = null; }
@@ -1382,7 +1414,7 @@ async function loadDiscovery(){
   }
 
   const { data: candidates, error } = await sb.from('profiles')
-    .select('id,name,display_name,gender,bio,interests,age,show_age,last_active,lat,lng')
+    .select('id,name,display_name,gender,bio,interests,age,show_age,last_active,verification_status,lat,lng')
     .neq('id', state.userId);
 
   if(error){ container.innerHTML = '<div class="hint">'+error.message+'</div>'; return; }
@@ -1432,7 +1464,7 @@ async function loadDiscovery(){
     const nameAgeParts = [];
     if(showNameFlag) nameAgeParts.push(c.name);
     if(showAgeFlag) nameAgeParts.push(c.age);
-    const headingText = nameAgeParts.length ? nameAgeParts.join(', ') : 'Nearby match';
+    const headingText = (nameAgeParts.length ? nameAgeParts.join(', ') : 'Nearby match') + (c.verification_status==='approved' ? ' &#9989;' : '');
     const statusText = lastSeenText(c.last_active);
     const isOnline = statusText === 'Online now';
     const chips = (c.interests||[]).map(i=>'<span class="chip" style="cursor:default">'+i+'</span>').join('');
@@ -1799,11 +1831,41 @@ function toggleSideAuto(){
   }
 }
 
+const VERIFY_POSES = [
+  'Peace sign, right hand \u270C\uFE0F',
+  'Thumbs up, left hand \uD83D\uDC4D',
+  'Touch your nose with one finger',
+  'Hold up 3 fingers',
+  'Hand on top of your head'
+];
+
 async function loadProfileSettings(){
   const hint = document.getElementById('settingsHint2');
   hint.textContent = '';
-  const { data: p } = await sb.from('profiles').select('name,display_name,age,show_age,gender,bio,interests').eq('id', state.userId).maybeSingle();
+  const { data: p } = await sb.from('profiles').select('name,display_name,age,show_age,gender,bio,interests,verification_status,verification_pose').eq('id', state.userId).maybeSingle();
   const { data: prefs } = await sb.from('preferences').select('*').eq('user_id', state.userId).maybeSingle();
+
+  const badge = document.getElementById('verifyStatusBadge');
+  const promptBlock = document.getElementById('verifyPromptBlock');
+  const status = p && p.verification_status;
+  if(status === 'approved'){
+    badge.innerHTML = '&#9989; Verified';
+    promptBlock.style.display = 'none';
+  } else if(status === 'pending'){
+    badge.textContent = 'Pending review — usually within a day or two';
+    promptBlock.style.display = 'none';
+  } else if(status === 'rejected'){
+    badge.textContent = 'Not approved — try again with a clearer selfie matching the pose';
+    promptBlock.style.display = '';
+  } else {
+    badge.textContent = 'Not verified';
+    promptBlock.style.display = '';
+  }
+  if(promptBlock.style.display !== 'none'){
+    const pose = VERIFY_POSES[Math.floor(Math.random()*VERIFY_POSES.length)];
+    document.getElementById('verifyPoseText').textContent = pose;
+    state.currentVerifyPose = pose;
+  }
 
   document.getElementById('psName').value = (p && p.name) || '';
   document.getElementById('psAge').value = (p && p.age) || '';
@@ -1853,6 +1915,24 @@ async function toggleHiddenPhoto(photoId, el){
   el.classList.toggle('on');
   const isHidden = el.classList.contains('on');
   await sb.from('photos').update({ is_hidden: isHidden }).eq('id', photoId);
+}
+
+async function submitVerification(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  event.target.value = '';
+  const hint = document.getElementById('settingsHint2');
+  hint.textContent = 'Uploading selfie...';
+  const path = state.userId + '/' + Date.now() + '-selfie.jpg';
+  const { error: upErr } = await sb.storage.from('verification-selfies').upload(path, file);
+  if(upErr){ hint.textContent = 'Upload failed: ' + upErr.message; return; }
+  const { error: dbErr } = await sb.from('profiles').update({
+    verification_status: 'pending',
+    verification_selfie_path: path,
+    verification_pose: state.currentVerifyPose || ''
+  }).eq('id', state.userId);
+  hint.textContent = dbErr ? ('Failed: ' + dbErr.message) : 'Selfie submitted — pending review.';
+  if(!dbErr) await loadProfileSettings();
 }
 
 async function saveProfileSettings(){
@@ -2128,6 +2208,7 @@ async function doLogin(){
   if(error){ document.getElementById('hint').textContent = error.message; return; }
   state.userId = data.user.id;
   state.email = email;
+  document.getElementById('adminNavItem').style.display = (state.email === ADMIN_EMAIL) ? '' : 'none';
   await sb.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', state.userId);
   refreshLocation();
   const { data: profile } = await sb.from('profiles').select('name,gender,bio').eq('id', state.userId).maybeSingle();
@@ -2145,6 +2226,7 @@ async function bootstrap(){
   if(session){
     state.userId = session.user.id;
     state.email = session.user.email;
+    document.getElementById('adminNavItem').style.display = (state.email === ADMIN_EMAIL) ? '' : 'none';
     sb.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', state.userId).then(()=>{});
     refreshLocation();
     const { data: profile } = await sb.from('profiles').select('name,gender,bio').eq('id', state.userId).maybeSingle();
@@ -2154,6 +2236,80 @@ async function bootstrap(){
     showPage(1);
   }
 }
+async function loadAdmin(){
+  const photoQ = document.getElementById('adminPhotoQueue');
+  const verifyQ = document.getElementById('adminVerifyQueue');
+  photoQ.innerHTML = '<div class="hint">Loading...</div>';
+  verifyQ.innerHTML = '<div class="hint">Loading...</div>';
+
+  const { data: photos, error: perr } = await sb.from('photos').select('id,user_id,url').eq('moderation_status','pending');
+  if(perr){ photoQ.innerHTML = '<div class="hint">'+perr.message+'</div>'; }
+  else if(!photos || !photos.length){ photoQ.innerHTML = '<div class="hint">Nothing pending.</div>'; }
+  else {
+    const ownerIds = photos.map(p=>p.user_id);
+    const { data: owners } = await sb.from('profiles').select('id,name').in('id', ownerIds);
+    const ownerMap = {};
+    (owners||[]).forEach(o=>{ ownerMap[o.id] = o.name; });
+    photoQ.innerHTML = '';
+    photos.forEach(p=>{
+      const row = document.createElement('div');
+      row.className = 'discover-card';
+      row.innerHTML =
+        '<img src="'+p.url+'" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px;margin-bottom:10px;">' +
+        '<div class="sub" style="margin-bottom:10px;">From: '+(ownerMap[p.user_id]||'unknown')+'</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<button class="nextbtn" style="background:var(--card2);flex:1;" onclick="rejectPhoto(\''+p.id+'\',this)">Reject</button>' +
+          '<button class="nextbtn" style="flex:1;" onclick="approvePhoto(\''+p.id+'\',this)">Approve</button>' +
+        '</div>';
+      photoQ.appendChild(row);
+    });
+  }
+
+  const { data: verifies, error: verr } = await sb.from('profiles').select('id,name,verification_pose,verification_selfie_path').eq('verification_status','pending');
+  if(verr){ verifyQ.innerHTML = '<div class="hint">'+verr.message+'</div>'; }
+  else if(!verifies || !verifies.length){ verifyQ.innerHTML = '<div class="hint">Nothing pending.</div>'; }
+  else {
+    const otherIds = verifies.map(v=>v.id);
+    const { data: mainPhotos } = await sb.from('photos').select('user_id,url').eq('is_main', true).in('user_id', otherIds);
+    const mainPhotoMap = {};
+    (mainPhotos||[]).forEach(m=>{ mainPhotoMap[m.user_id] = m.url; });
+    verifyQ.innerHTML = '';
+    for(const v of verifies){
+      const { data: signed } = await sb.storage.from('verification-selfies').createSignedUrl(v.verification_selfie_path, 3600);
+      const row = document.createElement('div');
+      row.className = 'discover-card';
+      row.innerHTML =
+        '<div class="sub" style="margin-bottom:6px;">'+(v.name||'unknown')+' — asked pose: <strong style="color:var(--text)">'+(v.verification_pose||'—')+'</strong></div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:10px;">' +
+          '<img src="'+(mainPhotoMap[v.id]||'')+'" style="width:50%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;">' +
+          '<img src="'+(signed?signed.signedUrl:'')+'" style="width:50%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;">' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<button class="nextbtn" style="background:var(--card2);flex:1;" onclick="rejectVerification(\''+v.id+'\',this)">Reject</button>' +
+          '<button class="nextbtn" style="flex:1;" onclick="approveVerification(\''+v.id+'\',this)">Approve</button>' +
+        '</div>';
+      verifyQ.appendChild(row);
+    }
+  }
+}
+
+async function approvePhoto(id, btn){
+  await sb.from('photos').update({ moderation_status: 'approved' }).eq('id', id);
+  btn.closest('.discover-card').remove();
+}
+async function rejectPhoto(id, btn){
+  await sb.from('photos').update({ moderation_status: 'rejected' }).eq('id', id);
+  btn.closest('.discover-card').remove();
+}
+async function approveVerification(userId, btn){
+  await sb.from('profiles').update({ verification_status: 'approved' }).eq('id', userId);
+  btn.closest('.discover-card').remove();
+}
+async function rejectVerification(userId, btn){
+  await sb.from('profiles').update({ verification_status: 'rejected' }).eq('id', userId);
+  btn.closest('.discover-card').remove();
+}
+
 bootstrap();
 </script>
 
